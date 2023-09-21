@@ -37,27 +37,12 @@ See corresponding README file:
 * [README_ICML_2021.md](README_ICML_2021.md)
 
 
-## Referencing ranking_bandits
-
-If you use `ranking_bandits` in a scientific publication, we would appreciate citations:
 
 ```bibtex
-@InProceedings{pmlr-v139-gauthier21a,
-  title = 	 {Parametric Graph for Unimodal Ranking Bandit},
-  author =       {Gauthier, Camille-Sovanneary and Gaudel, Romaric and Fromont, Elisa and Lompo, Boammani Aser},
-  booktitle = 	 {Proceedings of the 38th International Conference on Machine Learning},
-  pages = 	 {3630--3639},
-  year = 	 {2021},
-  editor = 	 {Meila, Marina and Zhang, Tong},
-  volume = 	 {139},
-  series = 	 {Proceedings of Machine Learning Research},
-  month = 	 {18--24 Jul},
-  publisher =    {PMLR},
   pdf = 	 {http://proceedings.mlr.press/v139/gauthier21a/gauthier21a.pdf},
   url = 	 {http://proceedings.mlr.press/v139/gauthier21a.html}
 }
 ```
 
 
-#### Acknowledgments
-Authors would like to thank Louis Vuitton for granting the PhD  at the root of this library.
+
