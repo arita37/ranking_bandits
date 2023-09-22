@@ -10,6 +10,18 @@ A Python-toolkit for bandit algorithms choosing a ranked-list of $K$ items among
 
 
 
+```
+
+
+
+
+
+
+```
+
+
+
+
 <!-- Draw horizontal rule -->
 <hr>
 
