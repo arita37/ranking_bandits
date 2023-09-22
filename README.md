@@ -32,7 +32,7 @@ at each time step
 
 
 
-1) run the example in the repo :
+1) run the example in the repo : only TopRANK
 
     https://github.dev/arita37/ranking_bandits/blob/main/README.md
 
