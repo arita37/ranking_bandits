@@ -20,6 +20,7 @@ def pd_generate(nhist=10000, dirout="./hist.csv", n_loc=5, n_item=10, n_user=12)
     df_hist['loc_id']  = np.random.randint(0, n_loc,  nhist)
     df_hist['item_id'] = np.random.randint(0, n_item, nhist)
     df_hist['user_id'] = np.random.randint(0, n_user, nhist)
+    df_hist['is_clk']  = np.random.randint(0, 2, nhist)
 
     pd_to_file(df_hist, dirout )
 
