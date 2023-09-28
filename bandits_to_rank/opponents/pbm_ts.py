@@ -130,10 +130,10 @@ class PBM_TS:
         self.nb_trials = 0
 
         # clean the log
-        self.success = np.zeros([self.nb_arms, self.nb_position], dtype=np.int)
-        self.place_view = np.zeros([self.nb_arms, self.nb_position], dtype=np.int)
-        self.n_try = np.zeros(self.nb_arms, dtype=np.int) # number of times a proposal has been drawn for arm i's parameter
-        self.n_drawn = np.zeros(self.nb_arms, dtype=np.int) # number of times arm i's parameter has been drawn
+        self.success = np.zeros([self.nb_arms, self.nb_position], dtype=np.int64)
+        self.place_view = np.zeros([self.nb_arms, self.nb_position], dtype=np.int64)
+        self.n_try = np.zeros(self.nb_arms, dtype=np.int64) # number of times a proposal has been drawn for arm i's parameter
+        self.n_drawn = np.zeros(self.nb_arms, dtype=np.int64) # number of times arm i's parameter has been drawn
 
     def choose_next_arm(self):#### Attention resampling
         thetas = np.ones(self.nb_arms, dtype=np.float)

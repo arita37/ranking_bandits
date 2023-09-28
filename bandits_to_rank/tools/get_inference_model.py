@@ -19,7 +19,7 @@ class GetEM():
 
     def __call__(self):
         res = EM(self.nb_arms, self.nb_positions)
-        res.nb_views = np.ones((self.nb_arms, self.nb_positions), dtype=np.int) * 0.0001
+        res.nb_views = np.ones((self.nb_arms, self.nb_positions), dtype=np.int64) * 0.0001
         return res
 
 class GetSVD():

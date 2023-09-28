@@ -114,7 +114,7 @@ class Environment_PBM:
             raise ValueError(f'unhandled ranking on positions: {positions_ranking}')
 
     def get_reward(self, propositions):
-        return np.array(self.rng.random() < self.thetas[propositions] * self.kappas, dtype=np.int)
+        return np.array(self.rng.random() < self.thetas[propositions] * self.kappas, dtype=np.int64)
 
     def _kappas(self):
         return self.kappas
@@ -200,7 +200,7 @@ class Environment_multirequest_PBM:
         raise NotImplementedError()
 
     def get_reward(self, propositions, query):
-        return np.array(self.rng.random() < self.thetas[query][propositions] * self.kappas, dtype=np.int)
+        return np.array(self.rng.random() < self.thetas[query][propositions] * self.kappas, dtype=np.int64)
 
     def _kappas(self):
         return self.kappas

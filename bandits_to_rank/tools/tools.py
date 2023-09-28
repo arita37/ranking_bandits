@@ -277,7 +277,7 @@ def order_theta_according_to_kappa_index(thetas, kappas):
     nb_position = len(kappas)
     index_theta_ordonne = np.array(thetas).argsort()[::-1][:nb_position]
     index_kappa_ordonne =  np.array(kappas).argsort()[::-1][:nb_position]
-    res = np.ones(nb_position, dtype=np.int)
+    res = np.ones(nb_position, dtype=np.int64)
     nb_put_in_res = 0
     for i in index_kappa_ordonne:
         res[i]=index_theta_ordonne[nb_put_in_res]
@@ -307,7 +307,7 @@ def order_index_according_to_kappa(index, kappas):
 
     nb_position = len(kappas)
     index_kappa_order = np.array(kappas).argsort()[::-1][:nb_position]
-    res = np.ones(nb_position, dtype=np.int)
+    res = np.ones(nb_position, dtype=np.int64)
     nb_put_in_res = 0
     for i in index_kappa_order:
         res[i]=index[nb_put_in_res]

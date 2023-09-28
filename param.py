@@ -5,6 +5,7 @@ import os
 import json
 import gzip
 import numpy as np
+import pandas as pd
 
 from bandits_to_rank.environment import Environment_PBM, PositionsRanking
 from bandits_to_rank.opponents import greedy
@@ -44,7 +45,7 @@ class NdArrayEncoder(json.JSONEncoder):
 def record_zip(filename, dico):
     print(type(dico))
     print('file', filename)
-    json_str = json.dumps(dico, cls=NdArrayEncoder)
+    json_str = json.dumps(dico, cls=NdArrayEncoder, indent=4)
     json_bytes = json_str.encode('utf-8')
     with gzip.GzipFile(filename, 'w') as fout:
         fout.write(json_bytes)
@@ -231,6 +232,25 @@ class Parameters():
             self.set_env_xx_small()
         else:
             raise ValueError("unknown label of environment")
+        
+    def set_env_from_csv(self, fname):
+        df = pd.read_csv(fname)
+        locations = list(set(df['loc_id']))
+        items = list(set(df['item_id']))
+        p = np.zeros((len(locations), len(items)))
+        for i in range(len(locations)):
+            for j in range(len(items)):
+                b = df[df['loc_id'] == locations[i]]
+                p[i, j] = b[b['item_id'] == items[j]]['is_clk'].mean()
+        p_l = p.sum(axis = 1)
+        p_i = p.sum(axis = 0)
+        max_l = p_l.argmax()
+        max_i = p_i.argmax()
+        kappas = p_l / p_l.max()
+        thetas = p[max_l, max_i] / p_i[max_i] * p_i
+        self.env_name = 'purely_simulated__small'
+        self.logs_env_name = self.env_name
+        self.env = Environment_PBM(thetas, kappas, label="purely simulated, small")
 
     def set_rules(self, nb_trials, nb_records=1000):
         # Check inputs

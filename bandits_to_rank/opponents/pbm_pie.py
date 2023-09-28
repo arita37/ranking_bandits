@@ -114,10 +114,10 @@ class PBM_PIE:
 
 
         # clean the log
-        self.success = np.ones([self.nb_arms, self.nb_position], dtype=np.int)* self.prior_s
-        self.place_view = np.ones([self.nb_arms, self.nb_position], dtype=np.int) * (self.prior_s + self.prior_f)
-        self.n_try = np.zeros(self.nb_arms, dtype=np.int) # number of times a proposal has been drawn for arm i's parameter
-        self.n_drawn = np.zeros(self.nb_arms, dtype=np.int) # number of times arm i's parameter has been drawn
+        self.success = np.ones([self.nb_arms, self.nb_position], dtype=np.int64)* self.prior_s
+        self.place_view = np.ones([self.nb_arms, self.nb_position], dtype=np.int64) * (self.prior_s + self.prior_f)
+        self.n_try = np.zeros(self.nb_arms, dtype=np.int64) # number of times a proposal has been drawn for arm i's parameter
+        self.n_drawn = np.zeros(self.nb_arms, dtype=np.int64) # number of times arm i's parameter has been drawn
         self.warm_up_list = [i for i in range(self.nb_arms)]
         if self.is_shuffled :
             shuffle(self.warm_up_list)

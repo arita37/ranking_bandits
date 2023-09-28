@@ -61,8 +61,8 @@ class EM():
 class SVD():
     def __init__(self, nb_products, nb_positions, prior=0.1):
         self.prior = prior
-        self.nb_views = np.zeros((nb_products, nb_positions), dtype=np.int) + self.prior
-        self.nb_clicks = np.zeros((nb_products, nb_positions), dtype=np.int) + self.prior
+        self.nb_views = np.zeros((nb_products, nb_positions), dtype=np.int64) + self.prior
+        self.nb_clicks = np.zeros((nb_products, nb_positions), dtype=np.int64) + self.prior
         self.positions = np.arange(nb_positions)
 
     def get_nb_products(self):

@@ -10,6 +10,7 @@ Usage:
             (--KDD <query>
             |--Yandex <query>|--Yandex_equi <query> <K>
             | --std | --small | --big | --xsmall | --xxsmall | --test
+            | --csv <fname>
             |--Yandex_CM <query> <nb_position> <nb_item>
             |--std_CM | --small_CM | --big_CM | --xsmall_CM | --xxsmall_CM | --test_CM)
             (--eGreedy <c> <maj> [--noSVD]
@@ -31,6 +32,7 @@ Usage:
             (--KDD_all | --KDD <query>
             | --Yandex_all| --Yandex <query> | --Yandex_equi_all <K> | --Yandex_equi <query> <K>
             | --std | --small | --big | --xsmall | --xxsmall | --test
+            | --csv <fname>
             | --Yandex_CM_all <nb_position> <nb_item> | --Yandex_CM <query> <nb_position> <nb_item>
             |--std_CM | --small_CM | --big_CM | --xsmall_CM | --xxsmall_CM | --test_CM)
             (--eGreedy <c> <maj> [--noSVD]
@@ -128,6 +130,8 @@ def args_to_params(args):
         params.set_env_xx_small_CM()
     elif args['--big_CM']:
         params.set_env_big_CM()
+    elif args['--csv']:
+        params.set_env_from_csv(fname=args['<fname>'])
     else:
         raise ValueError("unknown environment")
 

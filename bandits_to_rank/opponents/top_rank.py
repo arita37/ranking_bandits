@@ -43,7 +43,7 @@ def order_index_according_to_kappa(indices, kappas):
 
     nb_position = len(kappas)
     indice_kappa_ordonne = np.array(kappas).argsort()[::-1][:nb_position]
-    res = np.ones(nb_position, dtype=np.int)
+    res = np.ones(nb_position, dtype=np.int64)
     nb_put_in_res = 0
     for i in indice_kappa_ordonne:
         res[i]=indices[nb_put_in_res]
@@ -167,8 +167,8 @@ class TOP_RANK:
         self.prior_f = prior_f
         self.nb_positions = nb_positions
         self.nb_arms = nb_arms
-        self.n_try = np.zeros(nb_arms, dtype=np.int) # number of times a proposal has been drawn for arm i's parameter
-        self.n_drawn = np.zeros(nb_arms, dtype=np.int) # number of times arm i's parameter has been drawn
+        self.n_try = np.zeros(nb_arms, dtype=np.int64) # number of times a proposal has been drawn for arm i's parameter
+        self.n_drawn = np.zeros(nb_arms, dtype=np.int64) # number of times arm i's parameter has been drawn
 
         self.c = 3.43 ## 4sqrt(2/pi)/erf(squrt(2))
         self.set_L = set([i for i in range(nb_arms)])
@@ -204,8 +204,8 @@ class TOP_RANK:
         """ Clean log data at doubling trick """
         self.graph = set()
         self.partition = [self.set_L]
-        self.s = np.zeros([self.nb_arms, self.nb_arms], dtype=np.int)
-        self.n = np.zeros([self.nb_arms, self.nb_arms], dtype=np.int)
+        self.s = np.zeros([self.nb_arms, self.nb_arms], dtype=np.int64)
+        self.n = np.zeros([self.nb_arms, self.nb_arms], dtype=np.int64)
 
     def delta_from_horizon(self, T):
         return 1/float(T)

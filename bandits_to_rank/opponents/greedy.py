@@ -97,7 +97,7 @@ class greedy:
         self.pbm_model = SVD(nb_arms, nb_position)
         self.thetas_pyclic =  np.zeros(nb_arms)
         self.kappas_pyclic =  np.zeros(nb_position)
-        self.pbm_model.nb_views = np.ones((nb_arms, nb_position), dtype=np.int)*0.0001
+        self.pbm_model.nb_views = np.ones((nb_arms, nb_position), dtype=np.int64)*0.0001
         self.time_reject = 0
 
     def choose_next_arm(self):
@@ -144,7 +144,7 @@ class greedy_EM:
         self.pbm_model = EM(nb_arms, nb_position)
         self.thetas_pyclic =  np.zeros(nb_arms)
         self.kappas_pyclic =  np.zeros(nb_position)
-        self.pbm_model.nb_views = np.ones((nb_arms, nb_position), dtype=np.int)*0.0001
+        self.pbm_model.nb_views = np.ones((nb_arms, nb_position), dtype=np.int64)*0.0001
         self.time_reject = 0
 
     def choose_next_arm(self):

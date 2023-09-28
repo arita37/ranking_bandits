@@ -67,7 +67,7 @@ class PMED:
         38000
         >>> thetas = np.array([0.9, 0.7, 0.5, 0.45, 0.1])
         >>> kappas = np.array([1, 0.9, 0.8])
-        >>> player.nb_clics = np.array((thetas.reshape((-1,1)) @ kappas.reshape((1,-1))) * player.nb_prints, dtype=np.int)
+        >>> player.nb_clics = np.array((thetas.reshape((-1,1)) @ kappas.reshape((1,-1))) * player.nb_prints, dtype=np.int64)
         >>> player.nb_clics
         array([[27000,  2430,  2160],
                [ 3500, 18900,   559],
@@ -90,7 +90,7 @@ class PMED:
         array([1. , 0.9, 0.8])
         >>> player.thetas_hat
         array([0.9 , 0.7 , 0.5 , 0.45, 0.1 ])
-        >>> np.array(player.q * np.log(player.nb_trials), dtype=np.int)
+        >>> np.array(player.q * np.log(player.nb_trials), dtype=np.int64)
         array([[3501,   43,    0,    0,    0],
                [  43, 3467,   34,    0,    0],
                [   0,   32,  343, 1584, 1584],
@@ -728,15 +728,15 @@ class PMED:
         for _ in range(self.nb_arms**2):
             if verbose:
                 print('N_tilde', n_tilde)
-                #print('int(N_tilde)', np.array(n_tilde, dtype=np.int))
-                print('bipartite-graph', np.array(n_tilde > epsilon, dtype=np.int))
+                #print('int(N_tilde)', np.array(n_tilde, dtype=np.int64))
+                print('bipartite-graph', np.array(n_tilde > epsilon, dtype=np.int64))
                 #print('max(N_tilde)', np.max(n_tilde))
                 #print('min(N_tilde != 0)', np.min(n_tilde[n_tilde > epsilon]))
                 print('nb(N_tilde > epsilon)', np.sum(n_tilde > epsilon))
             try:
-                _, perm = linear_sum_assignment(np.array(n_tilde > epsilon, dtype=np.int).T, maximize=True)
+                _, perm = linear_sum_assignment(np.array(n_tilde > epsilon, dtype=np.int64).T, maximize=True)
             except TypeError as e:
-                _, perm = linear_sum_assignment(-np.array(n_tilde > epsilon, dtype=np.int).T)
+                _, perm = linear_sum_assignment(-np.array(n_tilde > epsilon, dtype=np.int64).T)
             c = np.min(n_tilde[perm, self.pseudo_positions])
             n_tilde[perm, self.pseudo_positions] -= c
             res[tuple(perm[:self.nb_positions])] += c
