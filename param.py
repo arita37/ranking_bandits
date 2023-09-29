@@ -252,6 +252,8 @@ class Parameters():
         self.logs_env_name = self.env_name
         self.env = Environment_PBM(thetas, kappas, label="purely simulated, small")
 
+
+
     def set_rules(self, nb_trials, nb_records=1000):
         # Check inputs
         if nb_records > nb_trials:

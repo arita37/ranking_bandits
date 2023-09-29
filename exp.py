@@ -257,8 +257,9 @@ def play(params, dry_run=False, verbose=True):
     for id_g in range(params.first_game, params.end_game):
         if verbose:
             print('#### GAME '+str(id_g))
+            
         base_output_file_name = f'{params.output_path}/{params.env_name}__{params.player_name}__{params.rules_name}_{id_g}_game_id'
-        output_file_name = f'{base_output_file_name}.gz'
+        output_file_name      = f'{base_output_file_name}.gz'
         if os.path.exists(output_file_name) and not params.force:
             if verbose:
                 print('File', output_file_name, 'already exists. Keep it.')
