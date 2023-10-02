@@ -11,26 +11,43 @@ A Python-toolkit for bandit algorithms choosing a ranked-list of $K$ items among
 
 
 ```
+####
+pip install -r reqs.txt
+
+
+##### run code
+source activate bandit
+
+
+TESTDIR=`pwd`/test
+DATA_FNAME=`pwd`/hist.csv
+mkdir $TESTDIR
+mkdir $TESTDIR/dev_null
+mkdir $TESTDIR/dev_null_bis
+
+set -x
+python exp.py --play 2 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null --force || exit
+python exp.py --merge 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null || exit
+
+
+
+
 
 
 ##### Experiment with Top rank
-     test_exp.
 
     ### run the simulation
-    python exp.py --play 2 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null --force || exit
+       python exp.py --play 2 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null --force || exit
 
        ---> generates  2 files : 1 for each play/run.
              logs/  simulation.zip 
                     simulation. : sample headers.
 
 
-
-
-    ###  Merging which files ? : 
-    python exp.py --merge 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null || exit
+    ###  Merging output file into 1 single one
+       python exp.py --merge 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null || exit
 
             output is : 1 file merging previous simulation play file.
-
 
 
 
