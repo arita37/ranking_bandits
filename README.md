@@ -23,6 +23,7 @@ Need to
 
     All code is numpy --> in dictionary ---> pickle.
 
+
 </p>
 
 
@@ -30,6 +31,8 @@ Need to
 ```
 #### New conda env 
 pip install -r reqs.txt
+
+
 
 ### Data sample
       ,ts: timestamp in int
