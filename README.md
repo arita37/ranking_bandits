@@ -6,18 +6,57 @@
 <!-- Short description -->
 <p align="center">
 A Python-toolkit for bandit algorithms choosing a ranked-list of $K$ items among $L$ at each iteration
+
+
+at every time step t,
+    choose K items out of a list of L items
+    ranking problems at each time t.
+
+    To focus:
+       Top Rank (ie)
+
+    Data wrapper.
+
+
+Need to 
+    Model State Save, Model State load in pickle.   ONLY for TopRank
+
+    All code is numpy --> in dictionary ---> pickle.
+
 </p>
 
 
 
 ```
-####
+#### New conda env 
 pip install -r reqs.txt
+
+### Data sample
+      ,ts: timestamp in int
+
+      ,loc_id : location_id
+      ,item_id:  
+      ,user_id:  Not used here
+      ,is_clk :  reward 1/0 of the action.
+
+      Location_id ----> a list of L items.
+      At each time step ts,     
+         we choose K item_id out of each location_id (zipcode)
+
+####
+    Bernoulli sample of each item_id
+
+
+
+#### trace code
+   pip install pyinstrument 
+       Function call ---> easy to track what is called.
+
+
 
 
 ##### run code
 source activate bandit
-
 
 TESTDIR=`pwd`/test
 DATA_FNAME=`pwd`/hist.csv
@@ -26,8 +65,15 @@ mkdir $TESTDIR/dev_null
 mkdir $TESTDIR/dev_null_bis
 
 set -x
+
+### run Bandit Env simulation ---> output files on disk
 python exp.py --play 2 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null --force || exit
+
+
+### Merge the output files
 python exp.py --merge 100 -r 10 --csv $DATA_FNAME --TopRank 100 --horizon_time_known $TESTDIR/dev_null || exit
+
+
 
 
 
