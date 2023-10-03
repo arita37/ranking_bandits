@@ -282,6 +282,7 @@ def play(params, dry_run=False, verbose=True):
                     if verbose:
                         print(f'--- done in {time.time()-start_time} sec ---')
                     params.env = saved_params.env
+
                     params.player = saved_params.player
                     params.referee = saved_params.referee
                 else:
@@ -300,6 +301,7 @@ def play(params, dry_run=False, verbose=True):
                         if verbose:
                             start_time = time.time()
                             print('--- saving game state ---')
+                        
                         pickle.dump(params, gzip.GzipFile(f'{base_output_file_name}.ckpt.pickle.tmp', 'wb'))
                         if verbose:
                             print(f'--- done in {time.time() - start_time} sec ---')
@@ -317,6 +319,9 @@ def play(params, dry_run=False, verbose=True):
                     file = f'{base_output_file_name}.ckpt.pickle.{ext}'
                     if os.path.isfile(file):
                         os.remove(file)
+
+                params.player.save_model()
+
 
     return nb_played_games
 

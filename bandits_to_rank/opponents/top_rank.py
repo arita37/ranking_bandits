@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """"""
 from random import shuffle
+import pickle
 
 import numpy as np
 from math import sqrt,log
@@ -283,8 +284,60 @@ class TOP_RANK:
 
     def get_param_estimation(self):
         raise NotImplementedError()
+    
+    def save_model(self):
+
+        if not self.known_discount:
+            # Call the get_params method to get the values
+            thetas, kappas = self.learner.get_params()
+
+            # Create a dictionary with keys
+            params_dict = {
+                'thetas': thetas,
+                'kappas': kappas
+            }
+
+            # Specify the file name where you want to pickle the dictionary
+            file_name = 'top_rank_params.pickle'
+
+            # Pickle the dictionary into the file
+            with open(file_name, 'wb') as file:
+                pickle.dump(params_dict, file)
+
+        else:
+            # Create a dictionary with keys
+            params_dict = {
+                's_matrix': self.s,
+                'n_matrix': self.n
+            }
+
+            # Specify the file name where you want to pickle the dictionary
+            file_name = 'top_rank_params.pickle'
+
+            # Pickle the dictionary into the file
+            with open(file_name, 'wb') as file:
+                pickle.dump(params_dict, file)
 
 
+    def load_params(self):
+        
+        file_name = 'top_rank_params.pickle'
+
+        try:
+            with open(file_name, 'rb') as file:
+                params_dict = pickle.load(file)
+
+            if not self.known_discount:
+                # Load the values for thetas and kappas
+                self.learner.thetas_hat = params_dict['thetas']
+                self.learner.kappas_hat = params_dict['kappas']
+            else:
+                # Load the values for s_matrix and n_matrix
+                self.s = params_dict['s_matrix']
+                self.n = params_dict['n_matrix']
+
+        except FileNotFoundError:
+            print(f"File '{file_name}' not found.")        
 
 if __name__ == "__main__":
     import doctest
