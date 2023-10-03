@@ -319,7 +319,25 @@ class TOP_RANK:
                 pickle.dump(params_dict, file)
 
 
+    def load_params(self):
+        
+        file_name = 'top_rank_params.pickle'
 
+        try:
+            with open(file_name, 'rb') as file:
+                params_dict = pickle.load(file)
+
+            if not self.known_discount:
+                # Load the values for thetas and kappas
+                self.learner.thetas_hat = params_dict['thetas']
+                self.learner.kappas_hat = params_dict['kappas']
+            else:
+                # Load the values for s_matrix and n_matrix
+                self.s = params_dict['s_matrix']
+                self.n = params_dict['n_matrix']
+
+        except FileNotFoundError:
+            print(f"File '{file_name}' not found.")        
 
 if __name__ == "__main__":
     import doctest
