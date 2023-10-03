@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """"""
 from random import shuffle
+import pickle
 
 import numpy as np
 from math import sqrt,log
@@ -283,6 +284,40 @@ class TOP_RANK:
 
     def get_param_estimation(self):
         raise NotImplementedError()
+    
+    def save_model(self):
+
+        if not self.known_discount:
+            # Call the get_params method to get the values
+            thetas, kappas = self.learner.get_params()
+
+            # Create a dictionary with keys
+            params_dict = {
+                'thetas': thetas,
+                'kappas': kappas
+            }
+
+            # Specify the file name where you want to pickle the dictionary
+            file_name = 'top_rank_params.pickle'
+
+            # Pickle the dictionary into the file
+            with open(file_name, 'wb') as file:
+                pickle.dump(params_dict, file)
+
+        else:
+            # Create a dictionary with keys
+            params_dict = {
+                's_matrix': self.s,
+                'n_matrix': self.n
+            }
+
+            # Specify the file name where you want to pickle the dictionary
+            file_name = 'top_rank_params.pickle'
+
+            # Pickle the dictionary into the file
+            with open(file_name, 'wb') as file:
+                pickle.dump(params_dict, file)
+
 
 
 
