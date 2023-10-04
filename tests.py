@@ -1,6 +1,12 @@
 """
 Test script for the save and load functionality of the TOP_RANK class.
 
+   export pyinstrument=1  ### enable pyinstrument tracing
+
+   python tests.py test_toprank
+
+
+
 This script creates an instance of the TOP_RANK class, simulates a game by performing actions,
 saves the model using the save_model function, and then loads the model parameters into a new instance
 using the load_params function. It checks whether the loaded parameters match the original player's parameters.
@@ -17,7 +23,11 @@ import numpy as np
 from bandits_to_rank.opponents.top_rank import TOP_RANK  
 import pyinstrument
 
-def test_save_load_model():
+from utilmy import (log, os_makedirs)
+
+
+##############################################################################################
+def test_toprank():
     # Specify the number of arms, positions, and discount factors
     nb_arms = 10
     discount_factors = [0.9, 0.8, 0.7]  # A list of discount factors for each position
@@ -31,7 +41,6 @@ def test_save_load_model():
     for _ in range(100):
         choices, _ = player.choose_next_arm()  # Capture the choices and ignore the second value
         rewards = np.where(np.arange(nb_arms) == choices[0], 1, 0)  # Use NumPy's element-wise comparison
-
         player.update(choices, rewards)
 
     # Save the model
@@ -55,13 +64,19 @@ def test_save_load_model():
     assert np.array_equal(player.s, new_player.s)
     assert np.array_equal(player.n, new_player.n)
 
-    print("Save and Load Test: Passed")
+    log("Save and Load Test: Passed")
 
+
+##############################################################################################
 if __name__ == "__main__":
-    #profiler = pyinstrument.Profiler()
-    #profiler.start()
+    if os.environ.get('pyinstrument', "0") == "1" :
+       profiler = pyinstrument.Profiler()
+       profiler.start()
 
-    test_save_load_model()
+       fire.Fire() 
+       profiler.stop()
+       print(profiler.output_text(unicode=True, color=True))
+    else :
+        fire.Fire()
 
-    #profiler.stop()
-    #print(profiler.output_text(unicode=True, color=True))
+
