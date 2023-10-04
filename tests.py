@@ -23,11 +23,15 @@ import numpy as np
 from bandits_to_rank.opponents.top_rank import TOP_RANK  
 import pyinstrument
 
-from utilmy import (log, os_makedirs)
+from utilmy import (log, os_makedirs, config_load)
 
 
 ##############################################################################################
-def test_toprank():
+def test_toprank(config="config.yaml"):
+
+    cfg = config_load(config)
+    log(cfg)
+
     # Specify the number of arms, positions, and discount factors
     nb_arms = 10
     discount_factors = [0.9, 0.8, 0.7]  # A list of discount factors for each position
