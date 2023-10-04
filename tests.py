@@ -1,21 +1,20 @@
 """
 Test script for the save and load functionality of the TOP_RANK class.
 
+
    export pyinstrument=1  ### enable pyinstrument tracing
 
-   python tests.py test_toprank
+   python tests.py test_toprank  --config 'myconfig.yaml'
 
 
 
-This script creates an instance of the TOP_RANK class, simulates a game by performing actions,
-saves the model using the save_model function, and then loads the model parameters into a new instance
-using the load_params function. It checks whether the loaded parameters match the original player's parameters.
+    This script creates an instance of the TOP_RANK class, simulates a game by performing actions,
+    saves the model using the save_model function, and then loads the model parameters into a new instance
+    using the load_params function. It checks whether the loaded parameters match the original player's parameters.
 
-The purpose of this script is to test the save and load functionality of the TOP_RANK class to ensure
-that model persistence works as expected.
+    The purpose of this script is to test the save and load functionality of the TOP_RANK class to ensure
+    that model persistence works as expected.
 
-Usage:
-    Run this script to perform the save and load test for the TOP_RANK class.
 
 """
 
@@ -69,6 +68,8 @@ def test_toprank(config="config.yaml"):
     assert np.array_equal(player.n, new_player.n)
 
     log("Save and Load Test: Passed")
+
+
 
 
 ##############################################################################################
