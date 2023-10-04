@@ -15,7 +15,7 @@ Usage:
 
 import numpy as np
 from bandits_to_rank.opponents.top_rank import TOP_RANK  
-
+import pyinstrument
 
 def test_save_load_model():
     # Specify the number of arms, positions, and discount factors
@@ -35,20 +35,33 @@ def test_save_load_model():
         player.update(choices, rewards)
 
     # Save the model
-    player.save_model()
+    player.save_model(dirout="models")
 
     # Create a new instance of the TOP_RANK class
     new_player = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
 
     # Load the model parameters into the new instance
-    new_player.load_params()
+    new_player.load_params(dirout="models")
 
     # Verify that the loaded parameters match the original ones
     # You can add assertions or checks here to ensure consistency
-    assert np.array_equal(player.discount_factor, new_player.discount_factor)  # Use np.array_equal
+    assert player.nb_arms == new_player.nb_arms
+    assert player.known_discount == new_player.known_discount
+    assert np.array_equal(player.discount_factor, new_player.discount_factor)
+    assert player.time == new_player.time
+    assert player.T_horizon == new_player.T_horizon
+    assert player.graph == new_player.graph
+    assert player.partition == new_player.partition
+    assert np.array_equal(player.s, new_player.s)
+    assert np.array_equal(player.n, new_player.n)
 
     print("Save and Load Test: Passed")
 
-
 if __name__ == "__main__":
+    #profiler = pyinstrument.Profiler()
+    #profiler.start()
+
     test_save_load_model()
+
+    #profiler.stop()
+    #print(profiler.output_text(unicode=True, color=True))
