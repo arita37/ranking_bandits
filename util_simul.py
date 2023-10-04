@@ -306,55 +306,6 @@ if 'utils':
             return False
 
 
-################################################################################################################
-###########  Fake historical Sparse Click  ######################################################################
-def pd_historylist_to_csr(df: pd.DataFrame, colslist: list = None, hashSize: int = 5000, dtype=np.float32,
-                          max_rec_perlist: int = 5,
-                          min_rec_perlist: int = 0, sep_genre=",", sep_subgenre="/"):
-    """ Creates Sparse matrix of dimensions:
-            Single value  max=i+1, min=i
-            ncol: hashsize * (nlist1 + nlist2 + ....)    X    nrows: nUserID
-            xdf:  pd.DataFrame
-                genreCol: string: "4343/4343/4545, 4343/4343/4545, 4343/4343/4545, 4343/4343/4545, 4343/4343/4545"
-            colist:   list of column names containing history list
-            hashSize: size of hash space
-            return X: scipy.sparse.coo_matrix
-    """
-    import mmh3
-    from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
-
-    ### Ncols = nb of col
-    Xcols = hashSize * len(colslist) * (max_rec_perlist - min_rec_perlist)  # top 5 genre for each reclist
-
-    # No. rows for sparse matrix X, N_userid
-    Xrows = len(df)
-
-    # Create zeros sparse matrix
-    X = lil_matrix((Xrows, Xcols), dtype=dtype)
-
-    bucket = 0
-    ntot = 0
-    for coli in colslist:
-        bucket0 = bucket  ### Store
-        recList = df[coli].values
-        for idx, genre_list in enumerate(recList):
-            if isinstance(genre_list, str): genre_list = genre_list.split(sep_genre)  ### 353/34534,  5435/4345,
-
-            ### Iterate for each genre in the reclist and reset to base bucket0
-            bucket = bucket0
-            for genre in genre_list[min_rec_perlist:max_rec_perlist]:
-                for subgenre in genre.split(sep_subgenre):  #### 35345/5435/345345
-                    ntot = ntot + 1
-                    colid = mmh3.hash(subgenre.strip(), 42, signed=False) % hashSize
-                    X[(idx, bucket + colid)] = 1
-                bucket += hashSize
-
-    X = csr_matrix(X)
-    log('Sparse matrix shape:', X.shape)
-    log('Expected no. of Ones: ', ntot)
-    log('No. of Ones in the Matrix: ', X.count_nonzero())
-    return X
-
 
 ####################################################################################################################
 if __name__ == "__main__":
