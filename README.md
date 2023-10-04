@@ -28,6 +28,114 @@ Need to
 
 
 
+
+
+```
+Next step:
+
+
+   Player --> action        ENV: reward
+
+ Setup an environnment easy to use
+ and DECOUPLE from player.
+
+
+Binomial sampling for click. P =0.12 
+  ---> Truth dataframe
+  ---> use this dataframe as FIXED enviroonment ( == Truth)
+        isclik
+
+  ---> run the playe agasint this ENV
+  ---> check convergence of the Best.
+
+
+#### Sampling dataframe + run the timestep simulation 
+
+At each time:
+   Select K items out of L items.
+
+       --> check if those items are clicked or not (reward_list = [0,0,1,0,0 ]
+
+      ,ts: timestamp in int
+      ,loc_id : location_id
+      ,item_id:  
+      ,is_clk :  reward 1/0 of the action.
+
+ At each time step,
+    loc_id: L items
+    Select K items out of L items of loc_id
+
+
+   Proba( Loc_id= L0 has one click) = Ploc
+
+   Proba( item=i of Loc_id=L0) =  Proba(item=i/L0) * Ploc
+
+
+
+USER Input:
+    loc_id_1 --> proba_1 (sample as binomial)     ,  
+    loc_id_2 --> proba_2 (sample as binomial)
+    loc_id_k --> proba_k (sample as binomial)
+
+
+   #### L items in total
+       proba( click on item A / Loc_id_1 ) = P(A/1)
+       proba( click on item B / Loc_id_1 ) = P(B/1)
+       proba( click on item C / Loc_id_1 ) = P(C/1)
+
+
+       proba( click on item A / Loc_id_2 ) = P(A/2)
+       proba( click on item B / Loc_id_2 ) = P(B/2)
+       proba( click on item C / Loc_id_2 ) = P(C/2)
+
+
+OUTPUT IS: 
+      ,ts: timestamp in int
+      ,loc_id : location_id
+      ,item_id:  
+      ,is_clk :  reward 1/0  is Sampled from.   Proba_1 * Proba(item_id/1) (Binomial sampling )
+
+
+
+def generate_sample_1(cfg)--> dataframe
+
+
+
+def simulate_toprank(df):  --> dfsimul (agent actual action)
+
+
+
+
+def simulate_check(dftrue, dfsimul):  --> dataframe loation_id ,  score
+
+
+   scipy.kendall.
+   Score: Kendall correl between lists, ranking metrics ?
+
+
+
+    Thruth
+    Validation ranking of condtional per Location_id
+    loc_id_1 :  Best ranking list 1       P(item 1 / loc_id_1),  P(item 2 / loc_id_1),  
+    loc_id_2 :  Best ranking list 2
+    loc_id_k :  Best ranking list k
+
+
+#####
+dfsample.groupby('location_id, item_iud).agg('imp')
+dfsample.groupby('location_id, item_iud).agg('true')
+
+ ctr = click / imp  = proba of binomial
+
+
+
+
+
+
+```
+
+
+
 ```
 #### New conda env 
 pip install -r reqs.txt
