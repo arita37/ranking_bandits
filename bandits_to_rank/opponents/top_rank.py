@@ -3,14 +3,15 @@
 """"""
 from random import shuffle
 import pickle
-
+import os
 import numpy as np
-from math import sqrt,log
+from math import sqrt, log
 from itertools import product
 
 from bandits_to_rank.sampling.pbm_inference import SVD
 from bandits_to_rank.tools.tools import order_index_according_to_kappa
 
+from utilmy import os_makedirs, save, load
 
 
 def order_index_according_to_kappa(indices, kappas):
@@ -47,10 +48,9 @@ def order_index_according_to_kappa(indices, kappas):
     res = np.ones(nb_position, dtype=np.int64)
     nb_put_in_res = 0
     for i in indice_kappa_ordonne:
-        res[i]=indices[nb_put_in_res]
-        nb_put_in_res+=1
+        res[i] = indices[nb_put_in_res]
+        nb_put_in_res += 1
     return res
-
 
 
 class TOP_RANK:
@@ -58,7 +58,8 @@ class TOP_RANK:
     Source : "Multiple-Play  Bandits  in  the  Position-Based  Model"
     reject sampling with beta preposal
     """
-    def __init__(self, nb_arms, T, horizon_time_known=True,doubling_trick_active=False, nb_positions=None, discount_factor=None, lag=1, prior_s=1, prior_f=1):
+
+    def __init__(self, nb_arms, T, horizon_time_known=True, doubling_trick_active=False, nb_positions=None, discount_factor=None, lag=1, prior_s=1, prior_f=1):
         """
         One of both `discount_facor` and `nb_positions` has to be defined.
 
@@ -154,7 +155,8 @@ class TOP_RANK:
         >>> assert np.all(counts[1] <= counts), "%r" % str(counts)
         """
         if (discount_factor is None) == (nb_positions is None):
-            raise ValueError("One of both `discount_facor` and `nb_positions` has to be defined")
+            raise ValueError(
+                "One of both `discount_facor` and `nb_positions` has to be defined")
         if discount_factor is not None:
             self.known_discount = True
             self.discount_factor = discount_factor
@@ -162,16 +164,17 @@ class TOP_RANK:
         else:
             self.known_discount = False
             self.lag = lag
-        
-            
+
         self.prior_s = prior_s
         self.prior_f = prior_f
         self.nb_positions = nb_positions
         self.nb_arms = nb_arms
-        self.n_try = np.zeros(nb_arms, dtype=np.int64) # number of times a proposal has been drawn for arm i's parameter
-        self.n_drawn = np.zeros(nb_arms, dtype=np.int64) # number of times arm i's parameter has been drawn
+        # number of times a proposal has been drawn for arm i's parameter
+        self.n_try = np.zeros(nb_arms, dtype=np.int64)
+        # number of times arm i's parameter has been drawn
+        self.n_drawn = np.zeros(nb_arms, dtype=np.int64)
 
-        self.c = 3.43 ## 4sqrt(2/pi)/erf(squrt(2))
+        self.c = 3.43  # 4sqrt(2/pi)/erf(squrt(2))
         self.set_L = set([i for i in range(nb_arms)])
 
         if horizon_time_known:
@@ -184,7 +187,8 @@ class TOP_RANK:
             self.delta = T
             self.T_horizon = -1
             if doubling_trick_active:
-                raise ValueError("Doubling trick requires an initial time-horizon")
+                raise ValueError(
+                    "Doubling trick requires an initial time-horizon")
 
         self.clean()
 
@@ -193,8 +197,10 @@ class TOP_RANK:
         # clean the model
         if not self.known_discount:
             self.learner = SVD(self.nb_arms, self.nb_positions)
-            self.learner.nb_views = np.ones((self.nb_arms, self.nb_positions)) * (self.prior_s+self.prior_f)
-            self.learner.nb_clicks = np.ones((self.nb_arms, self.nb_positions)) * self.prior_s
+            self.learner.nb_views = np.ones(
+                (self.nb_arms, self.nb_positions)) * (self.prior_s+self.prior_f)
+            self.learner.nb_clicks = np.ones(
+                (self.nb_arms, self.nb_positions)) * self.prior_s
             self.discount_factor = np.ones(self.nb_positions, dtype=np.float)
 
         # clean the log
@@ -220,12 +226,12 @@ class TOP_RANK:
         reco_final = np.array(reco_full[:self.nb_positions])
         return order_index_according_to_kappa(reco_final, self.discount_factor), 0
 
-    def get_reward_arm(self,i,propositions, rewards):
-        propositions_list=list(propositions)
+    def get_reward_arm(self, i, propositions, rewards):
+        propositions_list = list(propositions)
         if i in propositions_list:
             pos = propositions_list.index(i)
             rew = rewards[pos]
-        else :
+        else:
             rew = 0
         return rew
 
@@ -241,10 +247,11 @@ class TOP_RANK:
                 self.n[i][j] += abs(C_i - C_j)
 
                 # --- update graph ---
-                if self.n[i][j]>0:
-                    threshold = sqrt(2*self.n[i][j]*log((self.c/self.delta)*sqrt(self.n[i][j])))
+                if self.n[i][j] > 0:
+                    threshold = sqrt(
+                        2*self.n[i][j]*log((self.c/self.delta)*sqrt(self.n[i][j])))
                     if self.s[i][j] >= threshold:
-                         self.graph.add((j, i))
+                        self.graph.add((j, i))
 
     def build_P_td(self, set_done):
         P = set()
@@ -268,11 +275,11 @@ class TOP_RANK:
 
     def update(self, propositions, rewards):
         self.time += 1
-        if self.time == self.T_horizon:   #double-tricking
+        if self.time == self.T_horizon:  # double-tricking
             self.T_horizon *= 2
             self.delta = self.delta_from_horizon(self.T_horizon/2)
             self.clean_at_doubling_trick()
-            
+
         self.update_matrix_and_graph(propositions, rewards)
         self.partition_arm()
         if not self.known_discount:
@@ -280,64 +287,55 @@ class TOP_RANK:
             if self.time < 100 or self.time % self.lag == 0:
                 self.learner.learn()
                 self.discount_factor = self.learner.get_kappas()
-        self.time+=1
+        self.time += 1
 
     def get_param_estimation(self):
         raise NotImplementedError()
-    
-    def save_model(self):
+
+    def save_model(self, dirout):
+        os_makedirs(dirout)
+
+        model_params = {
+            'nb_arms': self.nb_arms,
+            'known_discount': self.known_discount,
+            'discount_factor': self.discount_factor,
+            'time': self.time,
+            'T_horizon': self.T_horizon,
+            'graph': self.graph,
+            'partition': self.partition,
+            's': self.s,
+            'n': self.n
+        }
 
         if not self.known_discount:
-            # Call the get_params method to get the values
-            thetas, kappas = self.learner.get_params()
+            model_params['thetas_hat'] = self.learner.thetas_hat
+            model_params['kappas_hat'] = self.learner.kappas_hat
 
-            # Create a dictionary with keys
-            params_dict = {
-                'thetas': thetas,
-                'kappas': kappas
-            }
+        with open(os.path.join(dirout, 'model.pkl'), 'wb') as file:
+            pickle.dump(model_params, file)
 
-            # Specify the file name where you want to pickle the dictionary
-            file_name = 'top_rank_params.pickle'
-
-            # Pickle the dictionary into the file
-            with open(file_name, 'wb') as file:
-                pickle.dump(params_dict, file)
-
-        else:
-            # Create a dictionary with keys
-            params_dict = {
-                's_matrix': self.s,
-                'n_matrix': self.n
-            }
-
-            # Specify the file name where you want to pickle the dictionary
-            file_name = 'top_rank_params.pickle'
-
-            # Pickle the dictionary into the file
-            with open(file_name, 'wb') as file:
-                pickle.dump(params_dict, file)
-
-
-    def load_params(self):
-        
-        file_name = 'top_rank_params.pickle'
-
+    def load_params(self, dirout):
         try:
-            with open(file_name, 'rb') as file:
-                params_dict = pickle.load(file)
+            with open(os.path.join(dirout, "model.pkl"), 'rb') as file:
+                model_params = pickle.load(file)
+
+            self.nb_arms = model_params['nb_arms']
+            self.known_discount = model_params['known_discount']
+            self.discount_factor = model_params['discount_factor']
+            self.time = model_params['time']
+            self.T_horizon = model_params['T_horizon']
+            self.graph = model_params['graph']
+            self.partition = model_params['partition']
+            self.s = model_params['s']
+            self.n = model_params['n']
 
             if not self.known_discount:
-                # Load the values for thetas and kappas
-                self.learner.thetas_hat = params_dict['thetas']
-                self.learner.kappas_hat = params_dict['kappas']
-            else:
-                # Load the values for s_matrix and n_matrix
-                self.s = params_dict['s_matrix']
-                self.n = params_dict['n_matrix']
+                self.learner.thetas_hat = model_params['thetas_hat']
+                self.learner.kappas_hat = model_params['kappas_hat']
 
         except FileNotFoundError:
-            print(f"File '{file_name}' not found.")        
+            print(f"File '{file_name}' not found.")
+
 
 if __name__ == "__main__":
     import doctest
