@@ -3,7 +3,7 @@
 source activate bandit
 
 TESTDIR=`pwd`/test
-DATA_FNAME=`pwd`/hist.csv
+DATA_FNAME=`pwd`/data/hist.csv
 mkdir $TESTDIR
 mkdir $TESTDIR/dev_null
 mkdir $TESTDIR/dev_null_bis
