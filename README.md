@@ -125,7 +125,7 @@ def simulate_check(dftrue, dfsimul):  --> dataframe loation_id ,  score
 dfsample.groupby('location_id, item_iud).agg('imp')
 dfsample.groupby('location_id, item_iud).agg('true')
 
- ctr = click / imp  = proba of binomial
+    ctr = click / imp  = proba of binomial
 
 
 
