@@ -39,9 +39,9 @@ def test_toprank():
     # Perform some updates or actions to simulate a game
     # This is just a dummy example; you should replace it with actual game actions
     for _ in range(100):
-        choices, _ = player.choose_next_arm()  # Capture the choices and ignore the second value
-        rewards = np.where(np.arange(nb_arms) == choices[0], 1, 0)  # Use NumPy's element-wise comparison
-        player.update(choices, rewards)
+        action_list, _ = player.choose_next_arm()  # Capture the action_list and ignore the second value
+        reward_list    = np.where(np.arange(nb_arms) == action_list[0], 1, 0)  # Use NumPy's element-wise comparison
+        player.update(action_list, reward_list)
 
     # Save the model
     player.save_model(dirout="models")
