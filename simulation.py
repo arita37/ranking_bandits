@@ -3,6 +3,8 @@ import numpy as np
 import os
 import fire
 import pyinstrument
+from bandits_to_rank.opponents.top_rank import TOP_RANK
+from utilmy import (log, os_makedirs, config_load)
 
 
 def binomial_sample(p: float, size: int = 1, n: int = 1):
@@ -37,7 +39,39 @@ def generate_click_data(cfg, T):
         data.append([ts, loc_id, item_id, is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
+    df.to_csv('data_simulation.csv', index=False)
     return df
+
+
+def test_toprank(cfg):
+    """
+    Simulate and test a TOP_RANK-based recommendation system using a provided dataset.
+
+    Args:
+    - cfg (str): Path to the configuration file containing dataset information and other settings.
+
+    Returns:
+    None
+    """
+    
+    cfg = config_load(cfg)
+    df = pd.read_csv(cfg['dataframe_csv'])
+
+    nb_arms = len(df['item_id'].unique())
+    discount_factors = [0.9, 0.9, 0.9]
+    T = len(df)
+    player = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
+
+    # Iterate through the DataFrame rows and simulate game actions
+    for _, row in df.iterrows():
+        item_id = row['item_id']
+        is_clk = row['is_clk']
+
+        # Simulate a game action and reward
+        action_list, _ = player.choose_next_arm()
+        reward_list = np.where(np.arange(nb_arms) == int(
+            item_id[-1])-1, is_clk, np.zeros(nb_arms))
+        player.update(action_list, reward_list)
 
 
 if __name__ == "__main__":
