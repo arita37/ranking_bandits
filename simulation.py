@@ -85,15 +85,15 @@ def evaluate_ranking_kendall(player, df):
 
     action_list, _ = player.choose_next_arm()
     kendall_tau, _ = kendalltau(ground_truth_ranking, action_list)
-    print(action_list, ground_truth_ranking)
     return kendall_tau
 
 
 
 def main():
+    generate_click_data(cfg= "config.yaml", T=5000)
     df = pd.read_csv('data_simulation.csv')
     player = test_toprank("config.yaml")
-    print(f'score = {evaluate_ranking_kendall(player, df)}')
+    print(f'kendall tau score = {evaluate_ranking_kendall(player, df)}')
 
 
 if __name__ == "__main__":
