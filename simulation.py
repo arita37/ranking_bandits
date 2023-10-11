@@ -1,3 +1,16 @@
+"""Docs
+
+   export pyinstrument=1
+   python simulation.py  run    #--dirout 
+
+   ### Check if  
+   python simulation.py   test1
+
+
+
+
+
+"""
 import pandas as pd
 import numpy as np
 import os
@@ -12,7 +25,7 @@ def binomial_sample(p: float, size: int = 1, n: int = 1):
     return np.random.binomial(n=n, p=p, size=size)
 
 
-def generate_click_data(cfg: str, T: int):
+def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
 
@@ -33,16 +46,16 @@ def generate_click_data(cfg: str, T: int):
     locations, items = list(cfg['loc_probas'].keys()), list(
     cfg['item_probas'].keys())
     for ts in range(T):
-        loc_id = np.random.choice(locations)
-        item_id = np.random.choice(items)
-        loc_prob = cfg['loc_probas'][loc_id]
+        loc_id    = np.random.choice(locations)
+        item_id   = np.random.choice(items)
+        loc_prob  = cfg['loc_probas'][loc_id]
         item_prob = cfg['item_probas'][item_id][loc_id]
 
         is_clk = binomial_sample(item_prob*loc_prob)[0]
         data.append([ts, int(loc_id), int(item_id), is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
-    df.to_csv('data_simulation.csv', index=False)
+    df.to_csv(dirout, index=False)
     return df
 
 def test_toprank(cfg):
@@ -89,11 +102,37 @@ def evaluate_ranking_kendall(player, df):
 
 
 
-def main():
+def test1():
+    ### pytest
+    # Generate a sample cfg dictionary and T value
+    cfg = {
+        'loc_probas': {
+            'loc1': 0.5,
+            'loc2': 0.3,
+            'loc3': 0.2,
+        },
+        'item_probas': {
+            'item1': {'loc1': 0.6, 'loc2': 0.4, 'loc3': 0.2},
+            'item2': {'loc1': 0.4, 'loc2': 0.5, 'loc3': 0.3},
+        }
+    }
+    T = 1000
+
+    # Call the generate_click_data function
+    df = generate_click_data(cfg, T)
+    assert len(df)>0
+
+
+
+
+##########################################################################
+def run():
     generate_click_data(cfg= "config.yaml", T=5000)
     df = pd.read_csv('data_simulation.csv')
     player = test_toprank("config.yaml")
     print(f'kendall tau score = {evaluate_ranking_kendall(player, df)}')
+
+
 
 
 if __name__ == "__main__":
@@ -101,7 +140,7 @@ if __name__ == "__main__":
         profiler = pyinstrument.Profiler()
         profiler.start()
 
-        fire.Fire(main)
+        fire.Fire()
         profiler.stop()
         print(profiler.output_text(unicode=True, color=True))
     else:
