@@ -1,13 +1,13 @@
 """Docs
 
+   export pyinstrument=0
+   python simulation.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
+
+
+
+   ### Test
    export pyinstrument=1
-   python simulation.py  run  --cfg "config.yaml"   #--dirout 
-
-
-   ### Check if  
    python simulation.py   test1
-
-
 
 
 
@@ -184,15 +184,18 @@ def test1():
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/'):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=10):    
 
-    dircsv = 'data_simulation.csv'
+    dirout2 = dirout + f"/T_{T}/"
+    os_makedirs(dirout2)
 
-    generate_click_data(cfg= cfg, T=5000, dirout= dircsv)
+    dircsv = f'{dirout2}/data_simulation.csv'
+
+    generate_click_data(cfg= cfg, T=T, dirout= dircsv)
     df      = pd.read_csv(dircsv)
     players = test_toprank(cfg, df)
     kdict   = evaluate_ranking_kendall(players, df)
-    json_save(kdict, dirout + "/result.json" )
+    json_save(kdict, dirout2 + "/result.json" )
     print(kdict)
 
 
