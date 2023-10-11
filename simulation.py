@@ -1,13 +1,17 @@
 """Docs
 
+   ### Test
+   export pyinstrument=1
+   python simulation.py   test1
+
+
+   ### experiments
    export pyinstrument=0
    python simulation.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
 
 
 
-   ### Test
-   export pyinstrument=1
-   python simulation.py   test1
+
 
 
 
