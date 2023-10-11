@@ -1,7 +1,8 @@
 """Docs
 
    export pyinstrument=1
-   python simulation.py  run    #--dirout 
+   python simulation.py  run  --cfg "config.yaml"   #--dirout 
+
 
    ### Check if  
    python simulation.py   test1
@@ -107,15 +108,30 @@ def test1():
     ### pytest
     # Generate a sample cfg dictionary and T value
     cfg = {
-        'loc_probas': {
-            'loc1': 0.5,
-            'loc2': 0.3,
-            'loc3': 0.2,
+    "loc_probas": {
+        "0": 0.5,
+        "1": 0.3,
+        "2": 0.2
+    },
+
+    "item_probas":{
+        "0":{
+            "0": 0.5,
+            "1": 0.2,
+            "2": 0.3
         },
-        'item_probas': {
-            'item1': {'loc1': 0.6, 'loc2': 0.4, 'loc3': 0.2},
-            'item2': {'loc1': 0.4, 'loc2': 0.5, 'loc3': 0.3},
+        "1":{
+            "0": 0.1,
+            "1": 0.6,
+            "2": 0.3
+        },
+        "2": {
+            "0": 0.2,
+            "1": 0.1,
+            "2": 0.7
         }
+    }
+    
     }
     T = 1000
 
@@ -125,13 +141,13 @@ def test1():
 
 
 
-
 ##########################################################################
-def run():    
-    generate_click_data(cfg= "config.yaml", T=5000, dirout=)
+def run(cfg:str="config.yaml"):    
+    generate_click_data(cfg= cfg, T=5000,)
     df = pd.read_csv('data_simulation.csv')
-    player = test_toprank("config.yaml")
-    print(f'kendall tau score = {evaluate_ranking_kendall(player, df)}')
+    player = test_toprank(cfg)
+    kt     = evaluate_ranking_kendall(player, df)
+    print(f'kendall tau score = {kt}')
 
 
 
