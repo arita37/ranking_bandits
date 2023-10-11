@@ -58,6 +58,7 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     df.to_csv(dirout, index=False)
     return df
 
+
 def test_toprank(cfg):
     """
     Simulate and test a TOP_RANK-based recommendation system using a provided dataset.
@@ -80,7 +81,7 @@ def test_toprank(cfg):
     # Iterate through the DataFrame rows and simulate game actions
     for _, row in df.iterrows():
         item_id = row['item_id']
-        is_clk = row['is_clk']
+        is_clk  = row['is_clk']
 
         # Simulate a game action and reward
         action_list, _ = player.choose_next_arm()
@@ -89,11 +90,11 @@ def test_toprank(cfg):
 
     return player
 
-def evaluate_ranking_kendall(player, df):
 
+def evaluate_ranking_kendall(player, df):
     clicked_items = df[df['is_clk'] == 1]
 
-    item_click_counts = clicked_items.groupby('loc_id')['is_clk'].sum().reset_index()
+    item_click_counts    = clicked_items.groupby('loc_id')['is_clk'].sum().reset_index()
     ground_truth_ranking = item_click_counts.sort_values(by='is_clk', ascending=False)['loc_id'].tolist()
 
     action_list, _ = player.choose_next_arm()
@@ -101,7 +102,7 @@ def evaluate_ranking_kendall(player, df):
     return kendall_tau
 
 
-
+######################################################################################
 def test1():
     ### pytest
     # Generate a sample cfg dictionary and T value
@@ -126,8 +127,7 @@ def test1():
 
 
 ##########################################################################
-def run():
-    
+def run():    
     generate_click_data(cfg= "config.yaml", T=5000, dirout=)
     df = pd.read_csv('data_simulation.csv')
     player = test_toprank("config.yaml")
