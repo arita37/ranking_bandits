@@ -80,8 +80,8 @@ def evaluate_ranking_kendall(player, df):
 
     clicked_items = df[df['is_clk'] == 1]
 
-    item_click_counts = clicked_items.groupby('item_id')['is_clk'].sum().reset_index()
-    ground_truth_ranking = item_click_counts.sort_values(by='is_clk', ascending=False)['item_id'].tolist()
+    item_click_counts = clicked_items.groupby('loc_id')['is_clk'].sum().reset_index()
+    ground_truth_ranking = item_click_counts.sort_values(by='is_clk', ascending=False)['loc_id'].tolist()
 
     action_list, _ = player.choose_next_arm()
     kendall_tau, _ = kendalltau(ground_truth_ranking, action_list)
