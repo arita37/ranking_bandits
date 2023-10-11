@@ -127,7 +127,8 @@ def test1():
 
 ##########################################################################
 def run():
-    generate_click_data(cfg= "config.yaml", T=5000)
+    
+    generate_click_data(cfg= "config.yaml", T=5000, dirout=)
     df = pd.read_csv('data_simulation.csv')
     player = test_toprank("config.yaml")
     print(f'kendall tau score = {evaluate_ranking_kendall(player, df)}')
