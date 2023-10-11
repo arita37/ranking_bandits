@@ -292,7 +292,7 @@ class TOP_RANK:
     def get_param_estimation(self):
         raise NotImplementedError()
 
-    def save_model(self, dirout):
+    def save(self, dirout):
         os_makedirs(dirout)
 
         model_params = {
@@ -314,7 +314,7 @@ class TOP_RANK:
         with open(os.path.join(dirout, 'model.pkl'), 'wb') as file:
             pickle.dump(model_params, file)
 
-    def load_params(self, dirout):
+    def load(self, dirout):
         try:
             with open(os.path.join(dirout, "model.pkl"), 'rb') as file:
                 model_params = pickle.load(file)
