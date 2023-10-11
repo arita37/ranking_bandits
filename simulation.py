@@ -1,6 +1,6 @@
 """Docs
 
-   export pyinstrument=1
+   export pyinstrument=0
    python simulation.py  run  --cfg "config.yaml"   #--dirout 
 
 
@@ -18,9 +18,9 @@ import os,json
 import fire
 import pyinstrument
 from bandits_to_rank.opponents.top_rank import TOP_RANK
-from utilmy import (log, os_makedirs, config_load)
+from utilmy import (log, os_makedirs, config_load, json_save)
 from scipy.stats import kendalltau
-
+from collections import defaultdict
 
 def binomial_sample(p: float, size: int = 1, n: int = 1):
     return np.random.binomial(n=n, p=p, size=size)
@@ -76,12 +76,13 @@ def test_toprank(cfg, df, dirout="ztmp/" ):
     # df = pd.read_csv(cfg['dataframe_csv'])
 
     nb_arms = len(df['item_id'].unique())
-    discount_factors = [0.5, 0.5, 0.5]
+    loc_id_all = len(df['loc_id'].unique())
+    discount_factors = [0.9, 0.9, 0.9]
     T = len(df)
 
     players=[]
     # Iterate through the DataFrame rows and simulate game actions
-    for loc_id in loc_id_all :
+    for loc_id in range(loc_id_all):
         dfi = df[df['loc_id'] == loc_id ]
         player = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
 
@@ -95,10 +96,10 @@ def test_toprank(cfg, df, dirout="ztmp/" ):
             reward_list = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
             player.update(action_list, reward_list)
 
-       diroutk =  dirout + f"/player_{i}/"
-       os_makedirs(diroutk)
-       player.save(dirouk)
-       players.append(player)
+        diroutk = f"{dirout}/player_{loc_id}/"
+        os_makedirs(diroutk)
+        player.save(diroutk)
+        players.append(player)
 
     return players
 
@@ -113,11 +114,6 @@ def evaluate_ranking_kendall(players, df, nsample=10):
               kendall goes to 1.0 if algo is correct.  
 
     """
-    #### Truth calculation
-    # clicked_items = df[df['is_clk'] == 1]
-    #### per loc_id, sort item_id  by  higher click amount : List of List
-    # item_click_counts    = clicked_items.groupby('loc_id')['is_clk'].sum().reset_index()
-    # ground_truth_ranking = item_click_counts.sort_values(by='is_clk', ascending=False)['loc_id'].tolist()
 
     def get_itemid_list(dfi):
         df2 = dfi.groupby(['item_id']).agg({'is_clk': 'sum'}).reset_index()
@@ -131,12 +127,13 @@ def evaluate_ranking_kendall(players, df, nsample=10):
 
     ## sampling of the kendall
     res = {}
-    for loc_id in locid_all:
+    locid_all = len(players)
+    for loc_id in range(locid_all):
         player    = players[loc_id]
-        list_true = dfg[dfg.loc_id == loc_id ]['list_true'].values
-
+        list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
         res[loc_id] = []
         for i in range(nsample):
+           
            action_list, _ = player.choose_next_arm()  ### return 1 Single List
            kendall_tau, _ = kendalltau(list_true, action_list)
            res[loc_id].append(kendall_tau)
@@ -187,13 +184,18 @@ def test1():
 def run(cfg:str="config.yaml", dirout='ztmp/exp/'):    
 
     dircsv = 'data_simulation.csv'
+    scores = defaultdict(list)
+    for T in [1000, 10000, 100000, 500000]:
+        generate_click_data(cfg= cfg, T=T, dirout= dircsv)
+        df      = pd.read_csv(dircsv)
+        players = test_toprank(cfg, df)
+        kdict   = evaluate_ranking_kendall(players, df, 50)
 
-    generate_click_data(cfg= cfg, T=5000, dirout= dircsv)
-    df      = pd.read_csv(dircsv)
-    players = test_toprank(cfg, df)
-    kdict   = evaluate_ranking_kendall(players, df)
-    json_save(kdict, dirout + "/result.json" )
-    print(kdict)
+        for key, values in kdict.items():
+            mean = sum(values) / len(values)
+            scores[key].append(mean)
+
+        json_save(scores, dirout + "/result.json" )
 
 
 
@@ -207,6 +209,6 @@ if __name__ == "__main__":
         profiler.stop()
         print(profiler.output_text(unicode=True, color=True))
     else:
-        fire.Fire(main)
+        run()
 
 
