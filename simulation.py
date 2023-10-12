@@ -50,16 +50,21 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     cfg  = json.loads(cfg0['simul']['probas']) ### load the string
 
     locations = list(cfg['loc_probas'].keys())
-    items = list(cfg['item_probas'][locations[0]].keys())
+    items     = list(cfg['item_probas'][locations[0]].keys())
     #loc_probas = list(cfg['loc_probas'].values())
-    for ts in range(T):
-        loc_id      = np.random.choice(locations)
-        item_probas = list(cfg['item_probas'][loc_id].values())
-        item_id     = np.random.choice(items, p=item_probas)
-        item_prob   = cfg['item_probas'][loc_id][item_id]
 
-        is_clk = binomial_sample(item_prob)[0]
-        data.append([ts, int(loc_id), int(item_id), is_clk])
+    for loc_id for locations:
+        item_probas = list(cfg['item_probas'][loc_id].values())
+        for ts in range(T):
+
+            ## Is click 1/0 
+            is_clk = binomial_sample(item_prob)[0]
+
+            ### which item has been clicked/shown
+            item_id     = np.random.choice(items, p=item_probas)
+
+            # item_prob   = cfg['item_probas'][loc_id][item_id]
+            data.append([ts, int(loc_id), int(item_id), is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
     df.to_csv(dirout, index=False)
@@ -86,12 +91,12 @@ def train_toprank(cfg, df, dirout="ztmp/" ):
     T = len(df)
 
     players=[]
-    # Iterate through the DataFrame rows and simulate game actions
+    #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi = df[df['loc_id'] == loc_id ]
         player = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
 
-        #### for each location we simulate the bandit optimizer (ie list of items)
+        # Iterate through the DataFrame rows and simulate game actions    
         for _, row in dfi.iterrows():
             item_id = row['item_id']
             is_clk  = row['is_clk']
