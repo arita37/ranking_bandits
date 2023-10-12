@@ -334,7 +334,7 @@ class TOP_RANK:
                 self.learner.kappas_hat = model_params['kappas_hat']
 
         except FileNotFoundError:
-            print(f"File '{file_name}' not found.")
+            print(f"File not found.")
 
 
 if __name__ == "__main__":

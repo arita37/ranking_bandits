@@ -47,17 +47,18 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     data = []
     cfg0 = config_load(cfg)
-    cfg  = json.loads( cfg0['simul']['probas']  ) ### load the string
+    cfg  = json.loads(cfg0['simul']['probas']) ### load the string
 
-    locations, items = list(cfg['loc_probas'].keys()), list(
-    cfg['item_probas'].keys())
+    locations = list(cfg['loc_probas'].keys())
+    items = list(cfg['item_probas'][locations[0]].keys())
+    #loc_probas = list(cfg['loc_probas'].values())
     for ts in range(T):
-        loc_id    = np.random.choice(locations)
-        item_id   = np.random.choice(items)
-        loc_prob  = cfg['loc_probas'][loc_id]
-        item_prob = cfg['item_probas'][item_id][loc_id]
+        loc_id      = np.random.choice(locations)
+        item_probas = list(cfg['item_probas'][loc_id].values())
+        item_id     = np.random.choice(items, p=item_probas)
+        item_prob   = cfg['item_probas'][loc_id][item_id]
 
-        is_clk = binomial_sample(item_prob*loc_prob)[0]
+        is_clk = binomial_sample(item_prob)[0]
         data.append([ts, int(loc_id), int(item_id), is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
@@ -65,7 +66,7 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     return df
 
 
-def test_toprank(cfg, df, dirout="ztmp/" ):
+def train_toprank(cfg, df, dirout="ztmp/" ):
     """
     Simulate and test a TOP_RANK-based recommendation system using a provided dataset.
 
@@ -81,7 +82,7 @@ def test_toprank(cfg, df, dirout="ztmp/" ):
 
     nb_arms = len(df['item_id'].unique())
     loc_id_all = len(df['loc_id'].unique())
-    discount_factors = [0.9, 0.9, 0.9]
+    discount_factors = [1,1,1]
     T = len(df)
 
     players=[]
@@ -136,7 +137,7 @@ def evaluate_ranking_kendall(players, df, nsample=10):
         player    = players[loc_id]
         list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
         res[loc_id] = []
-        for i in range(nsample):
+        for _ in range(nsample):
            
            action_list, _ = player.choose_next_arm()  ### return 1 Single List
            kendall_tau, _ = kendalltau(list_true, action_list)
@@ -144,9 +145,7 @@ def evaluate_ranking_kendall(players, df, nsample=10):
 
     return res
 
-
-
-###########################################################################
+##########################################################################
 def test1():
     ### pytest
     # Generate a sample cfg dictionary and T value
@@ -185,24 +184,22 @@ def test1():
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=10):    
-
-    dirout2 = dirout + f"/T_{T}/"
-    os_makedirs(dirout2)
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000):    
 
     dircsv = 'data_simulation.csv'
     scores = defaultdict(list)
-    for T in [1000, 10000, 100000, 500000]:
-        generate_click_data(cfg= cfg, T=T, dirout= dircsv)
-        df      = pd.read_csv(dircsv)
-        players = test_toprank(cfg, df)
-        kdict   = evaluate_ranking_kendall(players, df, 50)
+    df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
+    players = train_toprank(cfg, df)
+    kdict   = evaluate_ranking_kendall(players, df, 1000)
+    dirout2 = os.path.join(dirout, 'T_'+str(T))
+    json_save(kdict, dirout2 + "/result.json" )
 
-        for key, values in kdict.items():
-            mean = sum(values) / len(values)
-            scores[key].append(mean)
+    #for key, values in kdict.items():
+    #    mean = sum(values) / len(values)
+    #    scores[key].append(mean)
+    #    print(f"mean for key {key} = {mean})
 
-        json_save(scores, dirout + "/result.json" )
+    #json_save(scores, dirout + "/result.json" )
 
 
 
@@ -216,6 +213,6 @@ if __name__ == "__main__":
         profiler.stop()
         print(profiler.output_text(unicode=True, color=True))
     else:
-        run()
+        fire.Fire()
 
 
