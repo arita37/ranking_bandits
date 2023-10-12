@@ -7,7 +7,8 @@ from bandits_to_rank.tools.tools import swap_full, start_up, newton
 import numpy as np
 from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
-
+import os
+import pickle
 
 class GRAB:
     """
@@ -132,7 +133,47 @@ class GRAB:
                 self.list_transpositions.append((pi_extended[self.nb_positions - 1], pi_extended[i + 1]))
 
 
+    def save(self, dirout):
+        os.makedirs(dirout, exist_ok=True)
 
+        model_params = {
+            'nb_arms': self.nb_arms,
+            'nb_positions': self.nb_positions,
+            'list_transpositions': self.list_transpositions,
+            'gamma': self.gamma,
+            'forced_initiation': self.forced_initiation,
+            'certitude': self.certitude,
+            'kappa_thetas': self.kappa_thetas,  
+            'times_kappa_theta': self.times_kappa_theta,
+            'upper_bound_kappa_theta': self.upper_bound_kappa_theta,
+            'leader_count': self.leader_count,
+            'running_t': self.running_t,
+            'extended_leader': self.extended_leader,
+        }
+
+        with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
+            pickle.dump(model_params, file)
+
+    def load(self, dirout):
+        try:
+            with open(os.path.join(dirout, "model_grab.pkl"), 'rb') as file:
+                model_params = pickle.load(file)
+
+            self.nb_arms = model_params['nb_arms']
+            self.nb_positions = model_params['nb_positions']
+            self.list_transpositions = model_params['list_transpositions']
+            self.gamma = model_params['gamma']
+            self.forced_initiation = model_params['forced_initiation']
+            self.certitude = model_params['certitude']
+            self.kappa_thetas = model_params['kappa_thetas']
+            self.times_kappa_theta = model_params['times_kappa_theta']
+            self.upper_bound_kappa_theta = model_params['upper_bound_kappa_theta']
+            self.leader_count = model_params['leader_count']
+            self.running_t = model_params['running_t']
+            self.extended_leader = model_params['extended_leader']
+
+        except FileNotFoundError:
+            print(f"File not found.")
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
