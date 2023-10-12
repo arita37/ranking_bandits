@@ -53,7 +53,7 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     items     = list(cfg['item_probas'][locations[0]].keys())
     #loc_probas = list(cfg['loc_probas'].values())
 
-    for loc_id for locations:
+    for loc_id in locations:
         item_probas = list(cfg['item_probas'][loc_id].values())
         for ts in range(T):
 
@@ -90,11 +90,11 @@ def train_toprank(cfg, df, dirout="ztmp/" ):
     discount_factors = [1,1,1]
     T = len(df)
 
-    players=[]
+    agents=[]
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi = df[df['loc_id'] == loc_id ]
-        player = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
+        agent = TOP_RANK(nb_arms, T=T, discount_factor=discount_factors)
 
         # Iterate through the DataFrame rows and simulate game actions    
         for _, row in dfi.iterrows():
@@ -102,19 +102,19 @@ def train_toprank(cfg, df, dirout="ztmp/" ):
             is_clk  = row['is_clk']
 
             # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
-            action_list, _ = player.choose_next_arm()
+            action_list, _ = agent.choose_next_arm()
             reward_list = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
-            player.update(action_list, reward_list)
+            agent.update(action_list, reward_list)
 
-        diroutk = f"{dirout}/player_{loc_id}/"
+        diroutk = f"{dirout}/agent_{loc_id}/"
         os_makedirs(diroutk)
-        player.save(diroutk)
-        players.append(player)
+        agent.save(diroutk)
+        agents.append(agent)
 
-    return players
+    return agents
 
 
-def evaluate_ranking_kendall(players, df, nsample=10):
+def eval_agent_kendall(agents, df, nsample=10):
     """
        List of List :
           1 loc_id --->. List of item_id. : ranked by click amount.
@@ -137,54 +137,55 @@ def evaluate_ranking_kendall(players, df, nsample=10):
 
     ## sampling of the kendall
     res = {}
-    locid_all = len(players)
+    locid_all = len(agents)
     for loc_id in range(locid_all):
-        player    = players[loc_id]
+        agent    = agents[loc_id]
         list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
         res[loc_id] = []
         for _ in range(nsample):
            
-           action_list, _ = player.choose_next_arm()  ### return 1 Single List
+           action_list, _ = agent.choose_next_arm()  ### return 1 Single List
            kendall_tau, _ = kendalltau(list_true, action_list)
            res[loc_id].append(kendall_tau)
 
     return res
 
-##########################################################################
-def test1():
-    ### pytest
-    # Generate a sample cfg dictionary and T value
-    cfg = {
-    "loc_probas": {
-        "0": 0.5,
-        "1": 0.3,
-        "2": 0.2
-    },
 
-    "item_probas":{
-        "0":{
-            "0": 0.5,
-            "1": 0.2,
-            "2": 0.3
-        },
-        "1":{
-            "0": 0.1,
-            "1": 0.6,
-            "2": 0.3
-        },
-        "2": {
-            "0": 0.2,
-            "1": 0.1,
-            "2": 0.7
-        }
-    }
-    
-    }
-    T = 1000
+def eval_agent_kendall(agents, df, nsample=10):
+    """
+       List of List :
+          1 loc_id --->. List of item_id. : ranked by click amount.
 
-    # Call the generate_click_data function
-    df = generate_click_data(cfg, T)
-    assert len(df)>0
+        T = 10, 100, 500, 1000, 5000, 10000.   --> Kendall_avg
+
+              kendall goes to 1.0 if algo is correct.  
+
+    """
+
+    def get_itemid_list(dfi):
+        df2 = dfi.groupby(['item_id']).agg({'is_clk': 'sum'}).reset_index()
+        df2.columns = ['item_id','n_clk']
+        df2 = df2.sort_values('n_clk', ascending=False)
+        return df2['item_id'].values
+
+    dfc = df[df['is_clk'] == 1]
+    dfg = dfc.groupby('loc_id').apply(lambda dfi: get_itemid_list(dfi) ).reset_index()
+    dfg.columns = ['loc_id', 'list_true']
+
+    ## sampling of the kendall
+    res = {}
+    locid_all = len(agents)
+    for loc_id in range(locid_all):
+        agent    = agents[loc_id]
+        list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
+
+        action_list, _ = agent.choose_next_arm()  ### return 1 Single List
+        kendall_tau, _ = kendalltau(list_true, action_list)
+        res[loc_id].append(kendall_tau)
+
+    return res
+
+
 
 
 
@@ -194,8 +195,8 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000):
     dircsv = 'data_simulation.csv'
     scores = defaultdict(list)
     df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
-    players = train_toprank(cfg, df)
-    kdict   = evaluate_ranking_kendall(players, df, 1000)
+    agents = train_toprank(cfg, df)
+    kdict   = evaluate_ranking_kendall(agents, df, 1000)
     dirout2 = os.path.join(dirout, 'T_'+str(T))
     json_save(kdict, dirout2 + "/result.json" )
 
