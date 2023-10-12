@@ -57,13 +57,13 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
         item_probas = list(cfg['item_probas'][loc_id].values())
         for ts in range(T):
 
-            ## Is click 1/0 
-            is_clk = binomial_sample(item_prob)[0]
-
-            ### which item has been clicked/shown
+            ### which item has been clicked/impression
             item_id     = np.random.choice(items, p=item_probas)
 
-            # item_prob   = cfg['item_probas'][loc_id][item_id]
+            ## Is click 1/0 
+            item_prob = cfg['item_probas'][loc_id][item_id]
+            is_clk    = binomial_sample(item_prob)[0]
+
             data.append([ts, int(loc_id), int(item_id), is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
