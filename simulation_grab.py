@@ -58,7 +58,7 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
         for ts in range(T):
 
             ### which item has been clicked/impression
-            item_id     = np.random.choice(items, p=item_probas)
+            item_id   = np.random.choice(items, p=item_probas)
 
             ## Is click 1/0 
             item_prob = cfg['item_probas'][loc_id][item_id]
@@ -92,7 +92,7 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi   = df[df['loc_id'] == loc_id ]
-        agent = GRAB(nb_arms, nb_positions=3, T=T, gamma=100)
+        agent = GRAB(nb_arms, nb_positions=2, T=T, gamma=10)
 
         # Iterate through the DataFrame rows and simulate game actions    
         for _, row in dfi.iterrows():
@@ -112,14 +112,13 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     return agents
 
 
-def eval_agent_kendall(agents, df):
+def eval_agent(agents, df):
     """
        List of List :
           1 loc_id --->. List of item_id. : ranked by click amount.
 
         T = 10, 100, 500, 1000, 5000, 10000.   --> Kendall_avg
-
-              kendall goes to 1.0 if algo is correct.  
+ 
 
     """
 
@@ -133,16 +132,13 @@ def eval_agent_kendall(agents, df):
     dfg = dfc.groupby('loc_id').apply(lambda dfi: get_itemid_list(dfi) ).reset_index()
     dfg.columns = ['loc_id', 'list_true']
 
-    ## sampling of the kendall
     res = defaultdict(float)
     locid_all = len(agents)
     for loc_id in range(locid_all):
         agent    = agents[loc_id]
         list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
         action_list, _ = agent.choose_next_arm()  ### return 1 Single List
-        kendall_tau, _ = kendalltau(list_true[0][:len(action_list)], action_list)
-        print(list_true[0][:len(action_list)], action_list, kendall_tau)
-        res[loc_id] = kendall_tau
+        res[loc_id] = sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
 
 
     return res
@@ -150,21 +146,23 @@ def eval_agent_kendall(agents, df):
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=100000):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsample=10):    
 
+    results = defaultdict(int)
     dircsv  = 'data_simulation.csv'
-    df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
-    agents  = train_grab(cfg, df)
-    kdict   = eval_agent_kendall(agents, df)
+    for _ in range(nsample):
+        df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
+        agents  = train_grab(cfg, df)
+        kdict   = eval_agent(agents, df)
+
+        for k,v in kdict.items():
+            results[k] += v
+    
+    for k in results.keys():
+        results[k] /= nsample
+    
     dirout2 = os.path.join(dirout, 'T_'+str(T))
-    json_save(kdict, dirout2 + "/result.json" )
-
-    #for key, values in kdict.items():
-    #    mean = sum(values) / len(values)
-    #    scores[key].append(mean)
-    #    print(f"mean for key {key} = {mean})
-
-    #json_save(scores, dirout + "/result.json" )
+    json_save(results, dirout2 + "/result.json" )
 
 
 
