@@ -92,7 +92,7 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi   = df[df['loc_id'] == loc_id ]
-        agent = GRAB(nb_arms, nb_positions=1, T=T, gamma=100)
+        agent = GRAB(nb_arms, nb_positions=3, T=T, gamma=100)
 
         # Iterate through the DataFrame rows and simulate game actions    
         for _, row in dfi.iterrows():
@@ -112,7 +112,7 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     return agents
 
 
-def eval_agent_kendall(agents, df, nsample=10):
+def eval_agent_kendall(agents, df):
     """
        List of List :
           1 loc_id --->. List of item_id. : ranked by click amount.
@@ -137,72 +137,25 @@ def eval_agent_kendall(agents, df, nsample=10):
     res = defaultdict(float)
     locid_all = len(agents)
     for loc_id in range(locid_all):
-        for _ in range(nsample):
-            agent    = agents[loc_id]
-            list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
-            action_list, _ = agent.choose_next_arm()  ### return 1 Single List
-            kendall_tau, _ = kendalltau(list_true[0][:len(action_list)], action_list)
-            res[loc_id] += kendall_tau
-    for loc_id in range(locid_all):
-        res[loc_id] /= nsample
+        agent    = agents[loc_id]
+        list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
+        action_list, _ = agent.choose_next_arm()  ### return 1 Single List
+        kendall_tau, _ = kendalltau(list_true[0][:len(action_list)], action_list)
+        print(list_true[0][:len(action_list)], action_list, kendall_tau)
+        res[loc_id] = kendall_tau
+
 
     return res
 
 
 
-def eval_agent_regret(agents, df, nsample=10):
-    """
-    Evaluate the regret of the agent 
-    Args:
-    - agents: list of agents per location
-    - df: DataFrame
-    - nsample: number of samples
-
-    Returns:
-    regret_dict (dict)
-
-    """
-    
-    def get_optimal_action_list(dfi):
-        df2 = dfi.groupby(['item_id']).agg({'is_clk': 'sum'}).reset_index()
-        df2.columns = ['item_id', 'n_clk']
-        df2 = df2.sort_values('n_clk', ascending=False)
-        return df2['item_id'].values
-
-    dfc = df[df['is_clk'] == 1]
-    dfg = dfc.groupby('loc_id').apply(lambda dfi: get_optimal_action_list(dfi)).reset_index()
-    dfg.columns = ['loc_id', 'list_true']
-
-    regret_dict = defaultdict(float)
-    
-    locid_all = len(agents)
-
-    for loc_id in range(locid_all):
-        agent = agents[loc_id]
-        list_true = dfg[dfg.loc_id == loc_id]['list_true'].tolist()
-        for _ in range(nsample):
-            action_list, _ = agent.choose_next_arm()
-            if loc_id==2:
-                print(action_list)
-            optimal_action_list = list_true[0][:len(action_list)]
-            regret = sum(1 for action in optimal_action_list if action not in action_list)
-            regret_dict[loc_id] += regret
-
-    for loc_id in range(locid_all):
-        regret_dict[loc_id] /= nsample
-
-    return regret_dict
-
-
-
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=10000):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=100000):    
 
-    dircsv = 'data_simulation.csv'
-    scores = defaultdict(list)
+    dircsv  = 'data_simulation.csv'
     df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
     agents  = train_grab(cfg, df)
-    kdict   = eval_agent_regret(agents, df, 10)
+    kdict   = eval_agent_kendall(agents, df)
     dirout2 = os.path.join(dirout, 'T_'+str(T))
     json_save(kdict, dirout2 + "/result.json" )
 
