@@ -134,7 +134,7 @@ def eval_agent(agents, df):
     dfg = dfc.groupby('loc_id').apply(lambda dfi: get_itemid_list(dfi) ).reset_index()
     dfg.columns = ['loc_id', 'list_true']
 
-    res = defaultdict(float)
+    res = {}
     locid_all = len(agents)
     for loc_id in range(locid_all):
         agent    = agents[loc_id]
@@ -142,8 +142,10 @@ def eval_agent(agents, df):
         action_list, _ = agent.choose_next_arm()  ### return 1 Single List
 
         #### Calcuation
-        res[loc_id] = sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
-
+        if loc_id not in res: 
+            res[loc_id] = {}
+        mm= sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
+        res[loc_id] = mm
 
     return res
 
