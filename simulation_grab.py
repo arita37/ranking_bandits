@@ -152,22 +152,27 @@ def eval_agent(agents, df):
 ##########################################################################
 def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=10):    
 
-    results = {}
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
+    cfgd = config_load(cfg)
+
+    results = {}
     for i in range(nsimul):
         df      = generate_click_data(cfg= cfg, T=T, dirout= None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        agents  = train_grab(cfg, df)
+        agents  = train_grab(cfg, df, dirout=dirout2)
         kdict   = eval_agent(agents, df)
 
         for k,v in kdict.items():
-            results[k] = results.get(k,0) + v
+            if k not in results: results[k] = []
+            results[k].append( v ) 
     
-    for k in results.keys():
-        results[k] /= nsimul
+    res2 = {}
+    for k,vlist in results.items():
+        res2[k] = np.mean(vlist)
     
-    metrics = {'ctr_avg_per_item' : results }
+    metrics = {'ctr_avg_per_item' : res2,
+               'config': cfgd}
     json_save(metrics, dirout2 + "/metric.json" )
 
 
