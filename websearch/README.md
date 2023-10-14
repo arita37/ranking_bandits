@@ -7,13 +7,24 @@ The original dataset of MQ2007 can be downloaded from
 
 The preprocessed data files (after removing queries with no relevant documents) can be downloaded from [here](https://drive.google.com/file/d/13IPgtDq7YNiBoFGV_LXuxAPKIQLyAu_Y/view?usp=sharing). Place the downloaded files inside the directory *MQ2007*.
 
-
 Search dataset 
-
    query ---> list of documents
 
 
-1) Download the dataset and follow the steps.
+Algo paper
+https://arxiv.org/pdf/1910.10410.pdf
+
+
+#### 1) make the code runnable.
+  Download the dataset and follow the steps.
+  python main.py 
+  python evaluate.py   --data_dir MQ2007/Fold   --model_file   best_models/
+
+  
+
+#### Step 2
+   use custom dataset  : I will provide.
+   run training, run eval
 
 
 # Train
@@ -33,5 +44,5 @@ For evaluating the model trained on the mq2007 dataset, use the below command
 python evaluate.py   --data_dir MQ2007/Fold   --model_file   best_models/
 ```
 
-
+it is working 
 
