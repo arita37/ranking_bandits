@@ -11,16 +11,23 @@ Search dataset
    query ---> list of documents
 
 
-Algo paper
+Algo paper. RL algo for search.
 https://arxiv.org/pdf/1910.10410.pdf
 
 
-#### 1) make the code runnable.
+python 3.8
+pytorch 1.1 CPU
+
+
+
+#### 1) make the code runnable/testing the code
   Download the dataset and follow the steps.
   python main.py 
   python evaluate.py   --data_dir MQ2007/Fold   --model_file   best_models/
 
-  
+  epoch =1 
+  smaller dataset size : 1000 rows to check.
+
 
 #### Step 2
    use custom dataset  : I will provide.
