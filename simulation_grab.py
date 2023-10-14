@@ -104,6 +104,11 @@ def train_grab(cfg, df, dirout="ztmp/" ):
             # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
             reward_list = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
+
+            #### Regret Calc at each time step
+            regret ={}
+
+
             agent.update(action_list, reward_list)
 
         diroutk = f"{dirout}/agent_{loc_id}/"
