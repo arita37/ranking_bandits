@@ -7,7 +7,7 @@
 
    ### experiments
    export pyinstrument=0
-   python simulation.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
+   python simulation_grab.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
 
 
 
@@ -92,7 +92,7 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi   = df[df['loc_id'] == loc_id ]
-        agent = GRAB(nb_arms, nb_positions=2, T=T, gamma=10)
+        agent = GRAB(nb_arms, nb_positions=nb_arms, T=T, gamma=10)
 
         # Iterate through the DataFrame rows and simulate game actions    
         for _, row in dfi.iterrows():
@@ -114,11 +114,17 @@ def train_grab(cfg, df, dirout="ztmp/" ):
 
 def eval_agent(agents, df):
     """
-       List of List :
-          1 loc_id --->. List of item_id. : ranked by click amount.
+    Evaluate Bandit Algorithm Agents for Item Ranking
+    
+    Args:
+    - agents (list): List of bandit algorithm agents.
+    - df (DataFrame): User interaction data with 'loc_id', 'item_id', and 'is_clk'.
 
-        T = 10, 100, 500, 1000, 5000, 10000.   --> Kendall_avg
- 
+    Returns:
+    - res (dict): Evaluation results with CTR for each agent (per location).
+
+    Description:
+    Evaluates bandit algorithm agents' performance in ranking items. Calculates Click-Through Rate (CTR) for recommendations. 
 
     """
 
@@ -131,7 +137,6 @@ def eval_agent(agents, df):
     dfc = df[df['is_clk'] == 1]
     dfg = dfc.groupby('loc_id').apply(lambda dfi: get_itemid_list(dfi) ).reset_index()
     dfg.columns = ['loc_id', 'list_true']
-
     res = defaultdict(float)
     locid_all = len(agents)
     for loc_id in range(locid_all):
@@ -146,7 +151,7 @@ def eval_agent(agents, df):
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsample=10):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=100, nsample=10):    
 
     results = defaultdict(int)
     dircsv  = 'data_simulation.csv'
