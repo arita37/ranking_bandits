@@ -118,7 +118,8 @@ def eval_agent(agents, df):
     
     Args:
     - agents (list): List of bandit algorithm agents.
-    - df (DataFrame): User interaction data with 'loc_id', 'item_id', and 'is_clk'.
+    - df (DataFrame): User interaction data with 'loc_id', 'item_id', and 'is_clk'. Must contain at least one is_clk = 1 per loc_id
+
 
     Returns:
     - res (dict): Evaluation results with CTR for each agent (per location).
