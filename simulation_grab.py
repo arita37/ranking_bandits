@@ -145,7 +145,7 @@ def eval_agent(agents, df):
         if loc_id not in res: 
             res[loc_id] = {}
         mm= sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
-        res[loc_id] = {'ctr': mm }
+        res[loc_id] = mm
 
     return res
 
@@ -165,8 +165,7 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=10):
         agents  = train_grab(cfg, df, dirout=dirout2)
         kdict   = eval_agent(agents, df)
 
-        dctr = kdict['ctr']
-        for k,v in dctr.items():
+        for k,v in kdict.items():
             if k not in results: results[k] = []
             results[k].append( v ) 
     
