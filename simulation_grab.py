@@ -7,7 +7,7 @@
 
    ### experiments
    export pyinstrument=0
-   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/
+   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
 
@@ -73,9 +73,10 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     return df
 
 
-def train_grab(cfg, df, dirout="ztmp/" ):
+def train_grab(cfg, df, K, dirout="ztmp/"):
     """
-    Simulate and test a GRAB-based recommendation system using a provided dataset.
+    Simulate and test a GRAB-based recommendation system using a provided dataset. 
+    Compute the regret at each iteration
 
     Args:
     - cfg (str): Path to the configuration file containing dataset information and other settings.
@@ -94,19 +95,23 @@ def train_grab(cfg, df, dirout="ztmp/" ):
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi   = df[df['loc_id'] == loc_id ]
-        agent = GRAB(nb_arms, nb_positions=nb_arms, T=T, gamma=10)
-
+        agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
+        regret = {}
+        cumulative_expected_reward = 0
+        cumulative_reward = 0
         # Iterate through the DataFrame rows and simulate game actions    
-        for _, row in dfi.iterrows():
+        for t, row in dfi.iterrows():
             item_id = row['item_id']
             is_clk  = row['is_clk']
 
             # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
-            reward_list = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
+            reward_list    = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
 
-            #### Regret Calc at each time step
-            regret ={}
+            if is_clk:
+                cumulative_expected_reward += 1
+                cumulative_reward += sum(reward_list[action_list[i]] for i in range(len(action_list)))
+                regret[t] = cumulative_expected_reward-cumulative_reward
 
 
             agent.update(action_list, reward_list)
@@ -115,6 +120,11 @@ def train_grab(cfg, df, dirout="ztmp/" ):
         os_makedirs(diroutk)
         agent.save(diroutk)
         agents.append(agent)
+
+        diroutr = f"{dirout}/regret_{loc_id}/"
+        os_makedirs(diroutr)
+        json_save(regret, diroutr + "/regret.json" )
+
 
     return agents
 
@@ -156,6 +166,7 @@ def eval_agent(agents, df):
         #### Calcuation
         if loc_id not in res: 
             res[loc_id] = {}
+
         mm= sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
         res[loc_id] = mm
 
@@ -164,7 +175,7 @@ def eval_agent(agents, df):
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=10):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
@@ -174,7 +185,7 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=10):
     for i in range(nsimul):
         df      = generate_click_data(cfg= cfg, T=T, dirout= None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        agents  = train_grab(cfg, df, dirout=dirout2)
+        agents  = train_grab(cfg, df, K, dirout=dirout2)
         kdict   = eval_agent(agents, df)
 
         for k,v in kdict.items():
