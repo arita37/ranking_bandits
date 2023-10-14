@@ -7,7 +7,7 @@
 
    ### experiments
    export pyinstrument=0
-   python simulation_grab.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
+   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/
 
 
 
@@ -16,15 +16,16 @@
 
 
 """
-import pandas as pd
-import numpy as np
-import os,json
-import fire
-import pyinstrument
-from bandits_to_rank.opponents.grab import GRAB
-from utilmy import (log, os_makedirs, config_load, json_save)
+import pandas as pd, numpy as np, os,json
+import fire, pyinstrument
 from scipy.stats import kendalltau
 from collections import defaultdict
+from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
+date_now)
+
+
+from bandits_to_rank.opponents.grab import GRAB
+
 
 def binomial_sample(p: float, size: int = 1, n: int = 1):
     return np.random.binomial(n=n, p=p, size=size)
@@ -67,7 +68,8 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
             data.append([ts, int(loc_id), int(item_id), is_clk])
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
-    df.to_csv(dirout, index=False)
+    if dirout is not None:
+        df.to_csv(dirout, index=False)
     return df
 
 
@@ -138,6 +140,8 @@ def eval_agent(agents, df):
         agent    = agents[loc_id]
         list_true = dfg[dfg.loc_id == loc_id ]['list_true'].tolist()
         action_list, _ = agent.choose_next_arm()  ### return 1 Single List
+
+        #### Calcuation
         res[loc_id] = sum(1 for item in action_list if item in list_true[0][:len(action_list)]) / len(action_list)
 
 
@@ -146,23 +150,25 @@ def eval_agent(agents, df):
 
 
 ##########################################################################
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsample=10):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=10):    
 
-    results = defaultdict(int)
-    dircsv  = 'data_simulation.csv'
-    for _ in range(nsample):
-        df      = generate_click_data(cfg= cfg, T=T, dirout= dircsv)
+    results = {}
+    dt = date_now(fmt="%Y%m%d_%H%M")
+    dirout2 = dirout + f"/{dt}_T_{T}"
+    for i in range(nsimul):
+        df      = generate_click_data(cfg= cfg, T=T, dirout= None)
+        pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
         agents  = train_grab(cfg, df)
         kdict   = eval_agent(agents, df)
 
         for k,v in kdict.items():
-            results[k] += v
+            results[k] = results.get(k,0) + v
     
     for k in results.keys():
-        results[k] /= nsample
+        results[k] /= nsimul
     
-    dirout2 = os.path.join(dirout, 'T_'+str(T))
-    json_save(results, dirout2 + "/result.json" )
+    metrics = {'ctr_avg_per_item' : results }
+    json_save(metrics, dirout2 + "/metric.json" )
 
 
 
