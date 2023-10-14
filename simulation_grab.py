@@ -7,7 +7,7 @@
 
    ### experiments
    export pyinstrument=0
-   python simulation.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
+   python simulation_grab.py  run  --cfg "config.yaml"   --T 1    --dirout ztmp/exp/
 
 
 
