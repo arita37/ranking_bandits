@@ -14,12 +14,15 @@ Search dataset
 
 
 Algo paper. RL algo for search.
-https://arxiv.org/pdf/1910.10410.pdf
+https://arxiv.org/pdf/1910.10410.pdf 
 
 
 python 3.8
 pytorch 1.1 CPU
 
+pip3 install torch==1.10.0+cpu --index-url  https://download.pytorch.org/whl/cpu/
+
+https://download.pytorch.org/whl/cpu/torch-1.10.0%2Bcpu-cp38-cp38-linux_x86_64.whl#sha256=4c4e1cd4cf4dceff2797f9fc167fe5da31682b4fa09fec1002d89114965bf680
 
 
 #### 1) make the code runnable/testing the code
