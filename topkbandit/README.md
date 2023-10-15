@@ -4,17 +4,18 @@ Code for Top-k eXtreme Contextual Bandits: https://arxiv.org/abs/2102.07800
 
 
 ```
-cd topkbandit=
+cd topkbandit
 source ../init.sh
+
 
 tasks:
   - init:  
   
-    pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
-    pip3 install gdown
+    #pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
+    #pip3 install gdown
 
-    pip3 install -r requirements.txt
-    export PYTHONPATH="$(pwd)" 
+    #pip3 install -r requirements.txt
+    #export PYTHONPATH="$(pwd)" 
 
 
     #### Install CPP repo
