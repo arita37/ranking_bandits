@@ -9,7 +9,7 @@ list(APPEND CMAKE_PREFIX_PATH "/workspace/.pyenv_mirror/user/current/lib/python3
 # Tell CMake that headers are also in SOURCE_DIR
 include_directories(${SOURCE_DIR}/corelib)
 set(SOURCES "${SOURCE_DIR}/corelib/toy.cpp" "${SOURCE_DIR}/corelib/xcb_inference.cpp")
-#add_subdirectory(lib/pybind11)
-add_subdirectory('/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/)
+add_subdirectory(lib/pybind11)
+#add_subdirectory('/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/)
 include_directories(lib/eigen)
 pybind11_add_module(core ${SOURCES} "${SOURCE_DIR}/corelib/bindings.cpp")

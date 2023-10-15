@@ -14,34 +14,33 @@ tasks:
     pip3 install gdown
 
     pip3 install -r requirements.txt
-
-    pip install -e .
-
-
-           export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
-          export root=$(pwd)
-           echo "root  $root"
-           export PYTHONPATH="$root" 
-
-find_package(pybind11 REQUIRED)
-If Pybind11 is not installed, you can install it using the following command:
-
-pip install pybind11
-
-python -c "import pybind11; print(pybind11.get_cmake_dir())"
-python -c "import pybind11; print(pybind11)"
+    export PYTHONPATH="$(pwd)" 
 
 
-/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11
+    #### Install CPP repo
+        find_package(pybind11 REQUIRED)
+        If Pybind11 is not installed,
+        pip install pybind11
+
+        python -c "import pybind11; print(pybind11.get_cmake_dir())"
+        python -c "import pybind11; print(pybind11)"
+
+       ## symbolic link 
+       ln -s lib/pybind11         /workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11
 
 
-Then, you need to add the Pybind11 directory to your CMakeLists.txt:
+        /workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11
 
-add_subdirectory('/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/)
-list(APPEND CMAKE_PREFIX_PATH "/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11")
 
+        Then, you need to add the Pybind11 directory to your CMakeLists.txt:
+
+        add_subdirectory('/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/)
+        list(APPEND CMAKE_PREFIX_PATH "/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11")
 
    pip install -e .
+
+
+
 
 ##################
 https://tinyurl.com/4m7eczdv
