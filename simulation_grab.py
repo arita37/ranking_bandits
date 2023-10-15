@@ -99,6 +99,7 @@ def train_grab(cfg, df, K, dirout="ztmp/"):
         regret = {}
         cumulative_expected_reward = 0
         cumulative_reward = 0
+        reward_total_t = []
         # Iterate through the DataFrame rows and simulate game actions    
         for t, row in dfi.iterrows():
             item_id = row['item_id']
@@ -106,6 +107,12 @@ def train_grab(cfg, df, K, dirout="ztmp/"):
 
             # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
+
+            ##### Total reward = 1 if item_id in action_list[:topk]
+            rt = 1 if item_id in action_list and is_clk >0 else 0
+            reward_total_t.append(rt)
+
+            #### Granular reward
             reward_list    = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
 
             if is_clk:
