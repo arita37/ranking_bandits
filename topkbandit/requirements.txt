@@ -1,8 +1,11 @@
 pybind11
+libpecos
 scikit-learn
 scipy
 numpy
 pandas
-libpecos
 tqdm
 kmeans1d
+fire
+python-box
+utilmy

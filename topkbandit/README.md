@@ -1,6 +1,76 @@
 # eXtreme Contextual Bandits
 Code for Top-k eXtreme Contextual Bandits: https://arxiv.org/abs/2102.07800
 
+
+
+```
+cd topkbandit=
+source ../init.sh
+
+tasks:
+  - init:  
+  
+    pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
+    pip3 install gdown
+
+    pip3 install -r requirements.txt
+
+    pip install -e .
+
+
+           export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
+          export root=$(pwd)
+           echo "root  $root"
+           export PYTHONPATH="$root" 
+
+find_package(pybind11 REQUIRED)
+If Pybind11 is not installed, you can install it using the following command:
+
+pip install pybind11
+
+python -c "import pybind11; print(pybind11.get_cmake_dir())"
+python -c "import pybind11; print(pybind11)"
+
+
+/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11
+
+
+Then, you need to add the Pybind11 directory to your CMakeLists.txt:
+
+add_subdirectory('/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/)
+list(APPEND CMAKE_PREFIX_PATH "/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pybind11/share/cmake/pybind11")
+
+
+   pip install -e .
+
+##################
+https://tinyurl.com/4m7eczdv
+
+
+
+
+mkdir -p ztmp
+
+EURLex-4K. 2000 dim
+gdown --fuzzy https://drive.google.com/file/d/0B3lPMIHmG6vGU0VTR1pCejFpWjg/view?usp=sharing&resourcekey=0-SurjZ4z_5Tr38jENzf2Iwg   ztmp/
+
+
+unzip ztmp/Eurlex.zip
+
+https://drive.google.com/file/d/1b3mWgaKIAmc9Ae3E0QrokiIFA9Qj1K9r
+
+
+
+
+dirin='ztmp/Eurlex/'
+dirout='ztmp/exp/v1/'
+python xcb.utils.convert2sparse -i $dirin/eurlex_train.txt -o $dirout  --normalize
+
+
+```
+
+
+
 ## Data
 
 We include utils to process the datasets in the XMC repository (https://tinyurl.com/4m7eczdv) to our input format. Download a dataset from the original link for instance Eurlex-4k. 
@@ -8,7 +78,8 @@ We include utils to process the datasets in the XMC repository (https://tinyurl.
 Then run the following command:
 
 ```shell
-python xcb.utils.convert2sparse -i eurlex_train.txt -o path/to/train --normalize
+
+python xcb.utils.convert2sparse -i $dirin/eurlex_train.txt -o path/to/train --normalize
 
 ```
 
