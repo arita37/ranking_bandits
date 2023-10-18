@@ -114,6 +114,8 @@ class Environment_PBM:
             raise ValueError(f'unhandled ranking on positions: {positions_ranking}')
 
     def get_reward(self, propositions):
+        ### 1 if    random < proba(i) else 0:  sample the item proba i
+        ### == Indepeendat Bernoulli  == Mutiple click ( 1 value) at one step
         return np.array(self.rng.random() < self.thetas[propositions] * self.kappas, dtype=np.int64)
 
     def _kappas(self):
@@ -140,7 +142,7 @@ class Environment_PBM:
         return maximum_K_index(self.thetas, nb_position)
 
     def get_expected_reward(self, propositions):
-        return self.kappas * self.thetas[propositions]
+        return self.kappas * self.thetas[propositions] #### should Actual simulation ones
 
     def get_params(self):
         return {"label": self.label, "thetas": self.thetas, "kappas": self.kappas}

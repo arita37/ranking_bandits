@@ -9,6 +9,44 @@
    export pyinstrument=0
    python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
+     Dataset simulation:
+
+        K =  [0.99, 0.95, 0.9, 0.85, 0.8, 0.75, . . . , 0.75]
+        K = 1 all the time.
+
+        theta = P(click on item_i / Location_K)
+        Ptotal = theta * Kpositin
+
+        Each step t:
+            Possible multiple click SINCE
+              since item_id some Proba_i. (position, item i)
+                Indepdnant bernoulli with Pi.
+
+            Total rewardValue = [0  ,   TopK ]  (up to the size of the return list)    
+              because all item can be clicked (possible)
+
+
+        1 Location : Search Page 1 Search result
+              K items displayed
+              --> calculate the number of click within than K displayed items.
+
+        
+
+        Our side :
+               Each step t:
+                  Total Reward : O or 1 
+
+    
+       Our simulation :
+              Bernoulli: isClick. Proba
+
+              Softmax between items : Sum(proba_item) = 1.0. --> Do not allow to have mutiple.
+                  Distribute among item_id with proba_i
+
+
+
+
+
 
         papers
         We use two types of datasets: a simulated one for which we
@@ -29,7 +67,7 @@
         , . . . , 10−6
         ]), or close to one
         (θ
-        + = [0.99, 0.95, 0.9, 0.85, 0.8, 0.75, . . . , 0.75]).
+
         Real data contain the logs of actions toward the Yandex
         search engine: 65 million search queries and 167 million
         hits (clicks). Common use of this database in the bandit
@@ -103,6 +141,53 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     return df
 
 
+
+def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
+    """
+    Generate a dataframe with sampled items and locations with binomial sampling
+
+    Args:
+    - cfg: A dictionary containing location_id and their probabilities, item_id and their conditional probabilities
+    - T: number of timestamps
+
+    Returns:
+    - dataframe: A pandas DataFrame with the following columns:
+        - ts: Timestamp (int)
+        - loc_id: Location ID (int)
+        - item_id: Item ID (int)
+        - is_clk: Binary reward (1 for click, 0 for no click) sampled from the given probabilities. (int)
+
+       Mutiple rows :  item_id, is_clk
+
+
+
+
+
+    """
+    data = []
+    cfg0 = config_load(cfg)
+    cfg  = json.loads(cfg0['simul']['probas']) ### load the string
+
+    locations = list(cfg['loc_probas'].keys())
+    items     = list(cfg['item_probas'][locations[0]].keys())
+    #loc_probas = list(cfg['loc_probas'].values())
+
+    for loc_id in locations:
+        item_probas = list(cfg['item_probas'][loc_id].values())
+        for ts in range(T):
+
+            #### Check if each itemis was clicked or not : indepdantn bernoulli.
+            for item_id, pi in  enumerate(item_probas): 
+                is_clk    = binomial_sample(pi)[0]
+                data.append([ts, int(loc_id), int(item_id), is_clk])
+
+
+    df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
+    if dirout is not None:
+        df.to_csv(dirout, index=False)
+    return df
+
+
 def train_grab(cfg, df, K, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
@@ -164,6 +249,97 @@ def train_grab(cfg, df, K, dirout="ztmp/"):
 
 
     return agents
+
+
+
+def train_grab2(cfg, df, K, dirout="ztmp/"):
+    """
+    Simulate and test a GRAB-based recommendation system using a provided dataset. 
+    Compute the regret at each iteration
+
+    Args:
+    - cfg (str): Path to the configuration file containing dataset information and other settings.
+
+       Simulations :
+
+           #### Flatten the raw simulation t by time step
+
+
+
+            
+
+           for row in dfg.iterrows():
+
+
+
+            
+    Returns:
+    None
+    """
+    
+    cfg = config_load(cfg)
+
+    nb_arms    = len(df['item_id'].unique())
+    loc_id_all = len(df['loc_id'].unique())
+    T          = len(df)
+
+    agents=[]
+    #### for each location we simulate the bandit optimizer (ie list of items)
+    for loc_id in range(loc_id_all):
+
+        ### Flatten simulation data per time step
+        dfi   = df[df['loc_id'] == loc_id ]
+        dfg = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
+        dfg.columns = ['ts', 'itemid_list' ]
+        dfg['itemid_clk'] = df.groupby(['ts']).apply( lambda dfi :   dfi['isclk'].values  )    ##. 0,0,01
+
+        ### Init Agent
+        agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
+
+        dd = { 'reward_list':[], 'reward_best': [],  'reward': [], 'regret' : []  } 
+        for t, row in dfg.iterrows():
+            # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
+            action_list, _ = agent.choose_next_arm()
+
+            reward_best   = np.sum(row[ 'itemid_clk' ] )                   
+            reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ] )
+            regret        =  reward_best - reward_actual #### Max Value  K items
+
+            dd[ 'reward_best' ].append(   reward_best    )
+            dd[ 'reward_actual' ].append( reward_actual    )
+            dd[ 'reward_list' ].append(   ";".join([ str(ri) for ri in reward_list ])    )
+            dd[ 'regret' ].append(        regret    )
+            dd[ 'regret_linear' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
+
+            agent.update(action_list, reward_list)
+
+        df = pd.DataFrame(dd)
+        df = pd.concat((dfg, df)) ### concat the simul
+        df['loc_id'] = loc_id
+
+        #### Metrics 
+        diroutr = f"{dirout}/regret_{loc_id}/"
+        print(df[[ 'regret', 'regret_linear' ]])
+        pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1 )
+
+        #### Agent 
+        diroutk = f"{dirout}/agent_{loc_id}/"
+        os_makedirs(diroutk)
+        agent.save(diroutk)
+        agents.append(agent)
+
+    return agents
+
+
+
+def sum_intersection( action_list,  itemid_list,  itemid_clk ):
+    pass
+
+    return reward_actual, reward_list
+
+
+
+
 
 
 def eval_agent(agents, df):

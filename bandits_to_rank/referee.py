@@ -131,8 +131,8 @@ class Referee:
         for self.running_t in range(start, end):
             propositions, reject = player.choose_next_arm()
             if query is None:
-                expected_reward = self.env.get_expected_reward(propositions)
-                rewards = self.env.get_reward(propositions)
+                expected_reward = self.env.get_expected_reward(propositions) #### Best possible reward : All the clicks at that time step.
+                rewards         = self.env.get_reward(propositions)          ##### Current List reward: Insersection( ProposeList and Clicks )
             else:
                 expected_reward = self.env.get_expected_reward(propositions, query)
                 rewards = self.env.get_reward(propositions, query)
