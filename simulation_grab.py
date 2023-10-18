@@ -9,6 +9,42 @@
    export pyinstrument=0
    python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
+
+        papers
+        We use two types of datasets: a simulated one for which we
+        set the values for κ and θ and a real one, where parameters
+        are inferred from real life logs of Yandex search engine
+        (Yandex, 2013). Let’s remind that θi
+        is the probability for
+        the user to click on item i when it observes this item, and
+        κk is the probability for the user to observe position k.
+        Simulated data allow us to test GRAB in extreme situations. We consider L = 10 items, K = 5 positions, and κ = [1, 0.75, 0.6, 0.3, 0.1]. The range of values for θ is either close to zero (θ
+        − = [10−3
+        , 5.10−4
+        ,
+        10−4
+        , 5.10−5
+        , 10−5
+        , 10−6
+        , . . . , 10−6
+        ]), or close to one
+        (θ
+        + = [0.99, 0.95, 0.9, 0.85, 0.8, 0.75, . . . , 0.75]).
+        Real data contain the logs of actions toward the Yandex
+        search engine: 65 million search queries and 167 million
+        hits (clicks). Common use of this database in the bandit
+        setting consists first in extracting from these logs the parameters of the chosen real model, and then in simulating
+        users’ interactions given these parameters (Lattimore et al.,
+        2018). We use Pyclick library (Chuklin et al., 2015) to infer
+        the PBM parameters of each query with the expectation
+        maximization algorithm. This leads to θi values ranging
+        from 0.070 to 0.936, depending on the query. Similarly to
+        (Lattimore et al., 2018), we look at the results averaged on
+        the 10 most frequent queries, while displaying K = 5 items
+        among the L = 10 most attractive ones
+
+
+
 """
 import pandas as pd, numpy as np, os,json
 import fire, pyinstrument
