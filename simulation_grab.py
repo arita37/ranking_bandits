@@ -95,53 +95,8 @@ date_now)
 from bandits_to_rank.opponents.grab import GRAB
 
 
-def binomial_sample(p: float, size: int = 1, n: int = 1):
-    return np.random.binomial(n=n, p=p, size=size)
-
-
-def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
-    """
-    Generate a dataframe with sampled items and locations with binomial sampling
-
-    Args:
-    - cfg: A dictionary containing location_id and their probabilities, item_id and their conditional probabilities
-    - T: number of timestamps
-
-    Returns:
-    - dataframe: A pandas DataFrame with the following columns:
-        - ts: Timestamp (int)
-        - loc_id: Location ID (int)
-        - item_id: Item ID (int)
-        - is_clk: Binary reward (1 for click, 0 for no click) sampled from the given probabilities. (int)
-    """
-    data = []
-    cfg0 = config_load(cfg)
-    cfg  = json.loads(cfg0['simul']['probas']) ### load the string
-
-    locations = list(cfg['loc_probas'].keys())
-    items     = list(cfg['item_probas'][locations[0]].keys())
-    #loc_probas = list(cfg['loc_probas'].values())
-
-    for loc_id in locations:
-        item_probas = list(cfg['item_probas'][loc_id].values())
-        for ts in range(T):
-
-            ### which item has been clicked/impression
-            item_id   = np.random.choice(items, p=item_probas)
-
-            ## Is click 1/0 
-            item_prob = cfg['item_probas'][loc_id][item_id]
-            is_clk    = binomial_sample(item_prob)[0]
-
-            data.append([ts, int(loc_id), int(item_id), is_clk])
-
-    df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
-    if dirout is not None:
-        df.to_csv(dirout, index=False)
-    return df
-
-
-
+#########################################################################################
+######### Multiple Clicks ###############################################################
 def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
@@ -158,10 +113,6 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
         - is_clk: Binary reward (1 for click, 0 for no click) sampled from the given probabilities. (int)
 
        Mutiple rows :  item_id, is_clk
-
-
-
-
 
     """
     data = []
@@ -188,70 +139,6 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
     return df
 
 
-def train_grab(cfg, df, K, dirout="ztmp/"):
-    """
-    Simulate and test a GRAB-based recommendation system using a provided dataset. 
-    Compute the regret at each iteration
-
-    Args:
-    - cfg (str): Path to the configuration file containing dataset information and other settings.
-
-    Returns:
-    None
-    """
-    
-    cfg = config_load(cfg)
-
-    nb_arms    = len(df['item_id'].unique())
-    loc_id_all = len(df['loc_id'].unique())
-    T          = len(df)
-
-    agents=[]
-    #### for each location we simulate the bandit optimizer (ie list of items)
-    for loc_id in range(loc_id_all):
-        dfi   = df[df['loc_id'] == loc_id ]
-        agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
-        regret = {}
-        cumulative_expected_reward = 0
-        cumulative_reward = 0
-        reward_total_t = []
-        # Iterate through the DataFrame rows and simulate game actions    
-        for t, row in dfi.iterrows():
-            item_id = row['item_id']
-            is_clk  = row['is_clk']
-
-            # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
-            action_list, _ = agent.choose_next_arm()
-
-            ##### Total reward = 1 if item_id in action_list[:topk]
-            rt = 1 if item_id in action_list and is_clk >0 else 0
-            reward_total_t.append(rt)
-
-            #### Granular reward
-            reward_list    = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
-
-            if is_clk:
-                cumulative_expected_reward += 1
-                cumulative_reward += sum(reward_list[action_list[i]] for i in range(len(action_list)))
-                regret[t] = cumulative_expected_reward-cumulative_reward
-
-
-            agent.update(action_list, reward_list)
-
-        diroutk = f"{dirout}/agent_{loc_id}/"
-        os_makedirs(diroutk)
-        agent.save(diroutk)
-        agents.append(agent)
-
-        diroutr = f"{dirout}/regret_{loc_id}/"
-        os_makedirs(diroutr)
-        json_save(regret, diroutr + "/regret.json" )
-
-
-    return agents
-
-
-
 def train_grab2(cfg, df, K, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
@@ -263,16 +150,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
        Simulations :
 
            #### Flatten the raw simulation t by time step
-
-
-
-            
-
-           for row in dfg.iterrows():
-
-
-
-            
+    
     Returns:
     None
     """
@@ -339,7 +217,112 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk ):
 
 
 
+########################################################################################
+################ Version 1 Only one click per time step ################################
+def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
+    """
+    Generate a dataframe with sampled items and locations with binomial sampling
 
+    Args:
+    - cfg: A dictionary containing location_id and their probabilities, item_id and their conditional probabilities
+    - T: number of timestamps
+
+    Returns:
+    - dataframe: A pandas DataFrame with the following columns:
+        - ts: Timestamp (int)
+        - loc_id: Location ID (int)
+        - item_id: Item ID (int)
+        - is_clk: Binary reward (1 for click, 0 for no click) sampled from the given probabilities. (int)
+    """
+    data = []
+    cfg0 = config_load(cfg)
+    cfg  = json.loads(cfg0['simul']['probas']) ### load the string
+
+    locations = list(cfg['loc_probas'].keys())
+    items     = list(cfg['item_probas'][locations[0]].keys())
+    #loc_probas = list(cfg['loc_probas'].values())
+
+    for loc_id in locations:
+        item_probas = list(cfg['item_probas'][loc_id].values())
+        for ts in range(T):
+
+            ### which item has been clicked/impression
+            item_id   = np.random.choice(items, p=item_probas)
+
+            ## Is click 1/0 
+            item_prob = cfg['item_probas'][loc_id][item_id]
+            is_clk    = binomial_sample(item_prob)[0]
+
+            data.append([ts, int(loc_id), int(item_id), is_clk])
+
+    df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
+    if dirout is not None:
+        df.to_csv(dirout, index=False)
+    return df
+
+
+
+def train_grab(cfg, df, K, dirout="ztmp/"):
+    """
+    Simulate and test a GRAB-based recommendation system using a provided dataset. 
+    Compute the regret at each iteration
+
+    Args:
+    - cfg (str): Path to the configuration file containing dataset information and other settings.
+
+    Returns:
+    None
+    """
+    
+    cfg = config_load(cfg)
+
+    nb_arms    = len(df['item_id'].unique())
+    loc_id_all = len(df['loc_id'].unique())
+    T          = len(df)
+
+    agents=[]
+    #### for each location we simulate the bandit optimizer (ie list of items)
+    for loc_id in range(loc_id_all):
+        dfi   = df[df['loc_id'] == loc_id ]
+        agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
+        regret = {}
+        cumulative_expected_reward = 0
+        cumulative_reward = 0
+        reward_total_t = []
+        # Iterate through the DataFrame rows and simulate game actions    
+        for t, row in dfi.iterrows():
+            item_id = row['item_id']
+            is_clk  = row['is_clk']
+
+            # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
+            action_list, _ = agent.choose_next_arm()
+
+            ##### Total reward = 1 if item_id in action_list[:topk]
+            rt = 1 if item_id in action_list and is_clk >0 else 0
+            reward_total_t.append(rt)
+
+            #### Granular reward
+            reward_list    = np.where(np.arange(nb_arms) == item_id, is_clk, np.zeros(nb_arms))
+
+            if is_clk:
+                cumulative_expected_reward += 1
+                cumulative_reward += sum(reward_list[action_list[i]] for i in range(len(action_list)))
+                regret[t] = cumulative_expected_reward-cumulative_reward
+
+
+            agent.update(action_list, reward_list)
+
+        diroutk = f"{dirout}/agent_{loc_id}/"
+        os_makedirs(diroutk)
+        agent.save(diroutk)
+        agents.append(agent)
+
+        diroutr = f"{dirout}/regret_{loc_id}/"
+        os_makedirs(diroutr)
+        json_save(regret, diroutr + "/regret.json" )
+
+
+    return agents
 
 
 def eval_agent(agents, df):
@@ -387,7 +370,9 @@ def eval_agent(agents, df):
 
 
 
-##########################################################################
+
+##########################################################################################
+##########################################################################################
 def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
@@ -413,6 +398,13 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):
                'config': cfgd}
     json_save(metrics, dirout2 + "/metric.json" )
 
+
+
+
+##########################################################################################
+####### utiles
+def binomial_sample(p: float, size: int = 1, n: int = 1):
+    return np.random.binomial(n=n, p=p, size=size)
 
 
 
