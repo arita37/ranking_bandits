@@ -1,7 +1,7 @@
 """Docs
 
 ### install
-    pip install -r pip.txt
+    pip install -r ppip/pip.txt
 
 
 ### experiments
