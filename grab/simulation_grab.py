@@ -9,6 +9,10 @@
    python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
+   ### Version 2 : this the one we focus on
+   python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+
+
 
 ### Description:
 
@@ -240,10 +244,10 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
     for loc_id in range(loc_id_all):
 
         ### Flatten simulation data per time step
-        dfi   = df[df['loc_id'] == loc_id ]
+        dfi = df[df['loc_id'] == loc_id ]
         dfg = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
-        dfg['itemid_clk'] = df.groupby(['ts']).apply( lambda dfi :   dfi['isclk'].values  )    ##. 0,0,01
+        dfg['itemid_clk'] = df.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
 
         ### Init Agent
         agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
@@ -253,6 +257,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
 
+            #### Metrics Calc 
             reward_best   = np.sum(row[ 'itemid_clk' ] )                   
             reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ] )
             regret        =  reward_best - reward_actual #### Max Value  K items
@@ -263,6 +268,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             dd[ 'regret' ].append(        regret    )
             dd[ 'regret_linear' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
 
+            #### Update Agent 
             agent.update(action_list, reward_list)
 
         df = pd.DataFrame(dd)
@@ -285,9 +291,28 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
 
 def sum_intersection( action_list,  itemid_list,  itemid_clk ):
-    pass
+    
+    nL = len(itemid_list)
+    for i in range(nL):
 
     return reward_actual, reward_list
+
+
+
+def run2(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+
+    dt = date_now(fmt="%Y%m%d_%H%M")
+    dirout2 = dirout + f"/{dt}_T_{T}"
+    cfgd = config_load(cfg)
+
+    results = {}
+    for i in range(nsimul):
+        df      = generate_click_data2(cfg= cfg, T=T, dirout= None)
+        pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
+        agents  = train_grab2(cfg, df, K, dirout=dirout2)
+
+
+
 
 
 
@@ -445,8 +470,6 @@ def eval_agent(agents, df):
 
 
 
-##########################################################################################
-##########################################################################################
 def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
