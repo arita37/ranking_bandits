@@ -1,5 +1,73 @@
 """Docs
 
+Description:
+
+   RL bandit algorithm called GRAB.
+
+    This file run a ENV simulation.
+      1) We generate into a csv file the (actions, rewards)
+             generate_click_data2
+
+             Website : Amazon : many items to display (K items)
+
+
+               actions:  At each time step, we display on a website a list of K-items  (Amazon..) 
+                         1 action == 1 List of K items out of L items.
+
+               Rewards:  Users can click or not on 1 or many items
+
+            Feed rewards --> Agent/Player and generate new action.
+
+            ts,                loc_id,            item_id,                           is_clk
+            timestamp :int    webpage_id          item_id Displayed(CocaCola)        is click: 1/0
+
+            Assume loc_id =0 ONLY (only one webpage)
+            0,0,1,0
+            1,0,0,1
+            2,0,0,0
+
+
+      2) We use the csv file as ENVIRONNMENT values
+            Reward are PRE-GENERATED ( is_clk == reward) following some probability distribution
+            == Easier to validate.
+
+
+         and RUN the bandit simulation :
+                train_grab(cfg, df, K, dirout="ztmp/")
+
+                Standard RL:
+
+                for ti in range(0,T):
+                  action_itemlist    = get_action()  ### list of item_id
+                  reward_clklist     = get_reward(action_itemlist)
+                  metrics = calcmetrics(reward,....) 
+
+              dfmetrics.to_csv( .... )
+
+
+
+
+
+
+
+   
+    Simulation is running OK, no issues
+
+    ### Today
+    1) I need you understand the problem context 
+         and the simulation_grab.py  ---> Intuition is correct.
+
+
+    ##### AFTER
+    2) I need you improve the simulation code with my requirements.
+          Yes, some reward change, 
+               some optimization, ...
+            
+    3) Some part of the models ( I will explain)         
+            
+
+
+
    ### Test
    export pyinstrument=1
    python simulation.py   test1
@@ -96,7 +164,7 @@ from bandits_to_rank.opponents.grab import GRAB
 
 
 #########################################################################################
-######### Multiple Clicks ###############################################################
+######### Version 2 : Multiple Clicks ###############################################################
 def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
@@ -217,8 +285,8 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk ):
 
 
 
-########################################################################################
-################ Version 1 Only one click per time step ################################
+##########################################################################################
+################ Version 1 : Only one click per time step ################################
 def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
