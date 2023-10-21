@@ -1,5 +1,8 @@
 """Docs
 
+### install
+    pip install -r pip.txt
+
 
 ### experiments
    export pyinstrument=0
