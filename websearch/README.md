@@ -1,18 +1,25 @@
 ```
 
-cd .. 
+#### Which command
+
+
+1) how to Download the data ?
+    https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/#!letor-4-0
+
+    URL link
+
+
+2)
+   ### run this
+   python main_cpu.py  --arg 1
 
 
 
 
+3) 
 
 
-git clone https://github.com/arita37/ranking_bandits.git bnd2
-cd bnd2
-git checkout abndrank
 
-
-Now you copy
 
 
 
