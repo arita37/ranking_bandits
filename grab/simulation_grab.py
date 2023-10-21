@@ -1,6 +1,13 @@
 """Docs
 
-Description:
+
+### experiments
+   export pyinstrument=0
+   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+
+
+
+### Description:
 
    RL bandit algorithm called GRAB.
 
@@ -72,10 +79,6 @@ Description:
    export pyinstrument=1
    python simulation.py   test1
 
-
-   ### experiments
-   export pyinstrument=0
-   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
      Dataset simulation:
 
