@@ -1,5 +1,22 @@
 ```
 
+cd .. 
+
+
+
+
+
+
+git clone https://github.com/arita37/ranking_bandits.git bnd2
+cd bnd2
+git checkout abndrank
+
+
+Now you copy
+
+
+
+
 # Data
 The original dataset of MQ2007 can be downloaded from 
 
