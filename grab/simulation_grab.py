@@ -14,7 +14,7 @@
 
 
 
-
+   #### Old not working. 
    ####python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
