@@ -198,11 +198,9 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
     cfg  = json.loads(cfg0['simul']['probas']) ### load the string
 
     locations = list(cfg['loc_probas'].keys())
-    items     = list(cfg['item_probas'][locations[0]].keys())
-    #loc_probas = list(cfg['loc_probas'].values())
 
     for loc_id in locations:
-        item_probas = list(cfg['item_probas'][loc_id].values())
+        item_probas = list(cfg['item_probas'][loc_id])
         for ts in range(T):
 
             #### Check if each itemis was clicked or not : indepdantn bernoulli.
@@ -282,14 +280,17 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             #### Update Agent 
             agent.update(action_list, reward_list)
 
+
         df = pd.DataFrame(dd)
         df = pd.concat((dfg, df), axis=1) ### concat the simul
+        df['regret_cum'] = df['regret'].cumsum()
+        df['reward_actual_sum'] = df['reward_actual'].cumsum()
         df['loc_id'] = loc_id
 
         log("#### Metrics Save ###########") 
-        log(df[[ 'reward_best' ,  'reward_actual', 'regret', 'regret_linear_cum' ]])
+        log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_linear_cum' ]])
         diroutr = f"{dirout}/metrics_{loc_id}/"
-        pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1 )
+        pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\n" )
 
         log("#### Agent Save ###########") 
         diroutk = f"{dirout}/agent_{loc_id}/"
@@ -325,13 +326,12 @@ def run2(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):
 
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
-    cfgd = config_load(cfg)
+    cfgd    = config_load(cfg)
 
-    results = {}
     for i in range(nsimul):
         df      = generate_click_data2(cfg= cfg, T=T, dirout= None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        agents  = train_grab2(cfg, df, K, dirout=dirout2)
+        train_grab2(cfg, df, K, dirout=dirout2)
 
 
 
@@ -492,7 +492,7 @@ def eval_agent(agents, df):
 
 
 
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=5):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
@@ -502,7 +502,7 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):
     for i in range(nsimul):
         df      = generate_click_data(cfg= cfg, T=T, dirout= None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        agents  = train_grab(cfg, df, K, dirout=dirout2)
+        agents  = train_grab(cfg, df, K=K, dirout=dirout2)
         kdict   = eval_agent(agents, df)
 
         for k,v in kdict.items():
