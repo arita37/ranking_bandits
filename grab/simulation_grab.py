@@ -254,14 +254,16 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
         log(dfg)
 
 
-        log("### Init Agent ")
+        log("####### Init Agent ")
         agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
+        log(agent)
 
         ### Metrics
         dd = { 'reward_best': [], 'reward_actual': [],  'reward_list':[], 
-                'regret': [], 'regret_linear' : [],
+                'regret': [], 'regret_linear_cum' : [],
              } 
 
+        log("####### Start Simul  ")
         for t, row in dfg.iterrows():
             # Return One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
@@ -275,17 +277,17 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             dd['reward_actual' ].append( reward_actual    )
             dd['reward_list' ].append(   ";".join([ str(ri) for ri in reward_list ])    )
             dd['regret' ].append(        regret    )
-            dd['regret_linear' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
+            dd['regret_linear_cum' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
 
             #### Update Agent 
             agent.update(action_list, reward_list)
 
         df = pd.DataFrame(dd)
-        df = pd.concat((dfg, df)) ### concat the simul
+        df = pd.concat((dfg, df), axis=1) ### concat the simul
         df['loc_id'] = loc_id
 
         log("#### Metrics Save ###########") 
-        log(df[[ 'regret', 'regret_linear' ]])
+        log(df[[ 'reward_best' ,  'reward_actual', 'regret', 'regret_linear_cum' ]])
         diroutr = f"{dirout}/metrics_{loc_id}/"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1 )
 
@@ -311,7 +313,7 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """
     reward_sum = 0.0    ### Sum( click if itemid in action_list ) for this time step.
     for itemk in action_list:
-         idx        = np.where( itemid_list == itemk)       ## Find index
+         idx        = list( itemid_list).index( itemk)       ## Find index
          reward_sum = reward_sum + itemid_clk[idx]   ## Check if this was clicked.  
 
     reward_list = itemid_clk
