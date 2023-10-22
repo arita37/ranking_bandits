@@ -270,7 +270,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             agent.update(action_list, reward_list)
 
 
-            dd = metrics_add(dd, 'action_list', action_list)
+            dd = metrics_add(dd, 'action_list',   action_list)
             dd = metrics_add(dd, 'reward_best',   reward_best    )
             dd = metrics_add(dd, 'reward_actual', reward_actual    )
             dd = metrics_add(dd, 'reward_list',   reward_list    )
