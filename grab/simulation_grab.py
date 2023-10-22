@@ -5,13 +5,17 @@
 
 
 ### experiments
-   export pyinstrument=0
-   python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
    ### Version 2 : this the one we focus on
+   export pyinstrument=0
    python simulation_grab.py  run2  --cfg "config.yaml"   --T 20    --dirout ztmp/exp/ --K 3
 
+
+
+
+
+   ####python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
 ### Description:
@@ -214,7 +218,7 @@ def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simul
 
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
     if dirout is not None:
-        pd_to_file(df, dirout, index=False)
+        pd_to_file(df, dirout, index=False, show=1)
     return df
 
 
@@ -233,8 +237,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
        
         python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
-    """
-    
+
+    """    
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
 
@@ -258,16 +262,16 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
         dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
-        log(dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
+        log('\n#### Simul data ', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
 
 
-        log("####### Init New Agent ")
+        log("\n#### Init New Agent ")
         agent = GRAB(**agent_pars)
         log(agent)
 
         ### Metrics
         dd = {}
-        log("####### Start Simul  ")
+        log("\n##### Start Simul  ")
         for t, row in dfg.iterrows():
             itemid_imp = row['itemid_list']
             itemid_clk = row['itemid_clk' ]
@@ -293,18 +297,19 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
 
 
-        log("#### Metrics Save ###########") 
+        log("###### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
-        log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
+        # log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
 
-        log("#### Agent Save ###########") 
+        log("###### Agent Save ###########") 
         diroutk = f"{dirout}/{loc_id}/agent"
         os_makedirs(diroutk)
         agent.save(diroutk)
         agents.append(agent)
+        log(diroutk)
 
     return agents
 
@@ -368,8 +373,9 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
 
 
     for i in range(nsimul):
-        df      = generate_click_data2(cfg= cfg, name=name, T=T, dirout=  None)
-        pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
+        dirouti = f"{dirout2}/sim{i}"
+        df      = generate_click_data2(cfg= cfg, name=name, T=T, 
+                                       dirout= dirout2 + f"/data/df_simul_{i}.csv")
         train_grab2(cfg, name, df, K, dirout=dirout2)
 
 
