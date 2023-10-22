@@ -175,7 +175,7 @@ from bandits_to_rank.opponents.grab import GRAB
 
 #########################################################################################
 ######### Version 2 : Multiple Clicks ###############################################################
-def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
+def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
 
@@ -194,10 +194,14 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
 
     """
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
-    cfgd  = json.loads(cfg0['simul']['probas']) ### load the string
-    locations = list(cfgd['loc_probas'].keys())
-    T         = cfg0['simul'].get( 'T', T)
+    cfg1 = cfg0[name]
 
+    T    = cfg1['T']  if T is None else T
+    cfgd = cfg1['env_probas'] 
+    locations = list(cfgd['loc_probas'].keys())
+    log(cfgd)
+
+    ### Generate Simulated Click 
     data = []
     for loc_id in locations:
         item_probas = list(cfgd['item_probas'][loc_id])
@@ -214,7 +218,7 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
     return df
 
 
-def train_grab2(cfg, df, K, dirout="ztmp/"):
+def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
     Compute the regret at each iteration
@@ -231,15 +235,22 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
     """
     
-    cfg = config_load(cfg) if isinstance(cfg, str) else cfg
+    cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
+    cfg1 = cfg0[name]
 
-    nb_arms    = len(df['item_id'].unique())
+    n_item_all = len(df['item_id'].unique())
     loc_id_all = len(df['loc_id'].unique())
     T          = len(df)
-    n_item_all = nb_arms
+
+    ### Agent Setup
+    agent_pars  = cfg1['agent'].get('agent_pars', {} )
+    agent_pars0 = { 'nb_arms': n_item_all, 'nb_positions': K, 'T': T, 'gamma': 10 }
+    agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
+    log(agent_pars)
+
 
     agents=[]
-    #### for each location we simulate the bandit optimizer (ie list of items)
+    #### for each location: a New bandit optimizer
     for loc_id in range(loc_id_all):
 
         ### Flatten simulation data per time step
@@ -247,24 +258,28 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
         dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
         dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
-        log(dfg)
+        log(dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
 
 
-        log("####### Init Agent ")
-        agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
+        log("####### Init New Agent ")
+        agent = GRAB(**agent_pars)
         log(agent)
 
         ### Metrics
         dd = {}
         log("####### Start Simul  ")
         for t, row in dfg.iterrows():
-            # Return One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
+            itemid_imp = row['itemid_list']
+            itemid_clk = row['itemid_clk' ]
+
+            # Return One action :  1 full list of item_id  to be Displayed
             action_list, _ = agent.choose_next_arm()
 
             #### Metrics Calc 
-            reward_best   = np.sum(row[ 'itemid_clk' ] )    ### All Clicks               
-            reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ],  n_item_all )
-            regret        =  reward_best - reward_actual #### Max Value  K items
+            reward_best   = np.sum( itemid_clk )   ### All Clicks               
+            reward_actual, reward_list = sum_intersection( action_list, itemid_imp, 
+                                                           itemid_clk,   )
+            regret        =  reward_best - reward_actual   #### Max Value  K items
 
             #### Update Agent 
             agent.update(action_list, reward_list)
@@ -275,18 +290,18 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             dd = metrics_add(dd, 'reward_actual', reward_actual    )
             dd = metrics_add(dd, 'reward_list',   reward_list    )
             dd = metrics_add(dd, 'regret',        regret    )
-            dd = metrics_add(dd, 'regret_bad_cum',  t * len(reward_list)   )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
 
 
         log("#### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
         log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
-        diroutr = f"{dirout}/metrics_{loc_id}/"
+        diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
 
         log("#### Agent Save ###########") 
-        diroutk = f"{dirout}/agent_{loc_id}/"
+        diroutk = f"{dirout}/{loc_id}/agent"
         os_makedirs(diroutk)
         agent.save(diroutk)
         agents.append(agent)
@@ -326,11 +341,12 @@ def to_str(vv, sep=","):
 
 def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """ 
-       itemid_list:   List of All displayed item
-       itemid_clk:    List  of 0 / 1 (is clicked), same size than itemid_list
-       action_list :  List of details. 
+       action_list :  List of Top-K itemid actually dispplayed
 
-       Return Sum(reward if itemid is predicted by action_list )
+       itemid_list:   List of all item_id
+       itemid_clk:    List  of 0 / 1 (is clicked), same size than itemid_list
+
+       Return Sum(reward if itemid is inside action_list )
 
 
     """
@@ -344,20 +360,17 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
 
 
 
-def run2(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
-    cfgd    = config_load(cfg)
-    cfgd['agent'] = {} if 'agent' not in cfgd else cfgd['agent']
-    cfgd['agent']['K'] = K 
-    cfgd['agent']['T'] = T
+    # cfg0    = config_load(cfg)
 
 
     for i in range(nsimul):
-        df      = generate_click_data2(cfg= cfgd, T=T, dirout= None)
+        df      = generate_click_data2(cfg= cfg, name=name, T=T, dirout=  None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        train_grab2(cfgd, df, K, dirout=dirout2)
+        train_grab2(cfg, name, df, K, dirout=dirout2)
 
 
 
