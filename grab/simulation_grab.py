@@ -10,7 +10,7 @@
 
 
    ### Version 2 : this the one we focus on
-   python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+   python simulation_grab.py  run2  --cfg "config.yaml"   --T 20    --dirout ztmp/exp/ --K 3
 
 
 
@@ -257,10 +257,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
         log(agent)
 
         ### Metrics
-        dd = { 'reward_best': [], 'reward_actual': [],  'reward_list':[], 
-                'regret': [], 'regret_linear_cum' : [],
-             } 
-
+        dd = {}
         log("####### Start Simul  ")
         for t, row in dfg.iterrows():
             # Return One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
@@ -271,26 +268,24 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ],  n_item_all )
             regret        =  reward_best - reward_actual #### Max Value  K items
 
-            dd['reward_best' ].append(   reward_best    )
-            dd['reward_actual' ].append( reward_actual    )
-            dd['reward_list' ].append(   ";".join([ str(ri) for ri in reward_list ])    )
-            dd['regret' ].append(        regret    )
-            dd['regret_linear_cum' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
-
             #### Update Agent 
             agent.update(action_list, reward_list)
 
 
-        df = pd.DataFrame(dd)
-        df = pd.concat((dfg, df), axis=1) ### concat the simul
-        df['regret_cum'] = df['regret'].cumsum()
-        df['reward_actual_sum'] = df['reward_actual'].cumsum()
-        df['loc_id'] = loc_id
+            dd = metrics_add(dd, 'action_list', action_list)
+            dd = metrics_add(dd, 'reward_best',   reward_best    )
+            dd = metrics_add(dd, 'reward_actual', reward_actual    )
+            dd = metrics_add(dd, 'reward_list',   reward_list    )
+            dd = metrics_add(dd, 'regret',        regret    )
+            dd = metrics_add(dd, 'regret_bad_cum',  t * len(reward_list)   )   #### Worst case  == Linear
+
 
         log("#### Metrics Save ###########") 
-        log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_linear_cum' ]])
+        df = metrics_create(dfg, dd)
+        log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
         diroutr = f"{dirout}/metrics_{loc_id}/"
-        pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\n" )
+        pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+
 
         log("#### Agent Save ###########") 
         diroutk = f"{dirout}/agent_{loc_id}/"
@@ -300,6 +295,35 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
     return agents
 
+
+
+def metrics_add(dd, name, val):
+
+        if name not in dd:
+            dd[name] =[  val ] 
+        else:
+            dd[name].append(  val )
+        return dd
+
+
+def metrics_create(dfg, dd:dict ):
+    df = pd.DataFrame(dd)
+    df = pd.concat((dfg, df), axis=1) ### concat the simul
+
+    for ci in df.columns:
+        x0 = df[ci].values[0]
+        if isinstance(x0, list):
+           df[ci] = df[ci].apply(lambda x: to_str(x))
+
+        if isinstance(x0, float):
+           df[ ci + '_cum'] = df[ci].cumsum()
+    return df
+
+
+
+def to_str(vv, sep=","):
+    if isinstance(vv, str): return vv 
+    return sep.join( [ str(x) for x in vv])
 
 
 def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
