@@ -171,7 +171,7 @@ import fire, pyinstrument
 from scipy.stats import kendalltau
 from collections import defaultdict
 from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
-date_now)
+date_now, load_function_uri)
 
 
 from bandits_to_rank.opponents.grab import GRAB
@@ -246,6 +246,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     T          = len(df)
 
     ### Agent Setup
+    agent_uri   = cfg1['agent'].get('uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     agent_pars0 = { 'nb_arms': n_item_all, 'nb_positions': K, 'T': T, 'gamma': 10 }
     agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
@@ -265,7 +266,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
         log("\n#### Init New Agent ")
-        agent = GRAB(**agent_pars)
+        agentClass = load_function_uri(agent_uri)
+        agent      = agentClass(**agent_pars)
+        # agent = GRAB(**agent_pars)
         log(agent)
 
         ### Metrics
