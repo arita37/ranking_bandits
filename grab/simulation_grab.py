@@ -242,28 +242,32 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
     loc_id_all = len(df['loc_id'].unique())
     T          = len(df)
 
-    n_item_all =
+    n_item_all = nb_arms
 
     agents=[]
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
 
         ### Flatten simulation data per time step
-        dfi = df[df['loc_id'] == loc_id ]
-        dfg = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
+        dfi         = df[df['loc_id'] == loc_id ]
+        dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
-        dfg['itemid_clk'] = df.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
+        dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
+        log(dfg)
 
-        ### Init Agent
+
+        log("### Init Agent ")
         agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
 
+        ### Metrics
         dd = { 'reward_list':[], 'reward_best': [],  'reward': [], 'regret' : []  } 
+
         for t, row in dfg.iterrows():
-            # One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
+            # Return One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
             action_list, _ = agent.choose_next_arm()
 
             #### Metrics Calc 
-            reward_best   = np.sum(row[ 'itemid_clk' ] )                   
+            reward_best   = np.sum(row[ 'itemid_clk' ] )    ### All Clicks               
             reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ],  n_item_all )
             regret        =  reward_best - reward_actual #### Max Value  K items
 
@@ -280,12 +284,12 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
         df = pd.concat((dfg, df)) ### concat the simul
         df['loc_id'] = loc_id
 
-        #### Metrics 
-        diroutr = f"{dirout}/regret_{loc_id}/"
-        print(df[[ 'regret', 'regret_linear' ]])
+        log("#### Metrics Save ###########") 
+        log(df[[ 'regret', 'regret_linear' ]])
+        diroutr = f"{dirout}/metrics_{loc_id}/"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1 )
 
-        #### Agent 
+        log("#### Agent Save ###########") 
         diroutk = f"{dirout}/agent_{loc_id}/"
         os_makedirs(diroutk)
         agent.save(diroutk)
@@ -297,18 +301,21 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
 def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """ 
-       itemid_list:
+       itemid_list:   List of All displayed item
+       itemid_clk:    List  of 0 / 1 (is clicked), same size than itemid_list
+       action_list :  List of details. 
+
+       Return Sum(reward if itemid is predicted by action_list )
 
 
     """
-    reward_sum = 0.0    
+    reward_sum = 0.0    ### Sum( click if itemid in action_list ) for this time step.
     for itemk in action_list:
-         idx = itemid_list.index(itemk)
-         reward_sum += itemid_clk[idx]
+         idx        = itemid_list.index(itemk)       ## Find index
+         reward_sum = reward_sum + itemid_clk[idx]   ## Check if this was clicked.  
 
-    for i in range(n_item_all)
     reward_list = itemid_clk
-    return reward_actual, reward_list
+    return reward_sum, reward_list
 
 
 
