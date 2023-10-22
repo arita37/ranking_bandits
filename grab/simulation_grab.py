@@ -230,10 +230,8 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
 
        
+        python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
-    
-    Returns:
-    None
     """
     
     cfg = config_load(cfg)
@@ -260,7 +258,9 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
         agent = GRAB(nb_arms, nb_positions=K, T=T, gamma=10)
 
         ### Metrics
-        dd = { 'reward_list':[], 'reward_best': [],  'reward': [], 'regret' : []  } 
+        dd = { 'reward_best': [], 'reward_actual': [],  'reward_list':[], 
+                'regret': [], 'regret_linear' : [],
+             } 
 
         for t, row in dfg.iterrows():
             # Return One action :  1 full list of item_id  and reward : 1 vector of [0,..., 1 , 0 ]
@@ -271,11 +271,11 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
             reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ],  n_item_all )
             regret        =  reward_best - reward_actual #### Max Value  K items
 
-            dd[ 'reward_best' ].append(   reward_best    )
-            dd[ 'reward_actual' ].append( reward_actual    )
-            dd[ 'reward_list' ].append(   ";".join([ str(ri) for ri in reward_list ])    )
-            dd[ 'regret' ].append(        regret    )
-            dd[ 'regret_linear' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
+            dd['reward_best' ].append(   reward_best    )
+            dd['reward_actual' ].append( reward_actual    )
+            dd['reward_list' ].append(   ";".join([ str(ri) for ri in reward_list ])    )
+            dd['regret' ].append(        regret    )
+            dd['regret_linear' ].append(        t * len(reward_list)   )   #### Worst case  == Linear
 
             #### Update Agent 
             agent.update(action_list, reward_list)
@@ -311,7 +311,7 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """
     reward_sum = 0.0    ### Sum( click if itemid in action_list ) for this time step.
     for itemk in action_list:
-         idx        = itemid_list.index(itemk)       ## Find index
+         idx        = np.where( itemid_list == itemk)       ## Find index
          reward_sum = reward_sum + itemid_clk[idx]   ## Check if this was clicked.  
 
     reward_list = itemid_clk
