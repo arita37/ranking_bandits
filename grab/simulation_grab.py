@@ -283,11 +283,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
             #### Metrics Calc 
             reward_best   = np.sum( itemid_clk )   ### All Clicks               
-            reward_actual, reward_list = rwd_sum_intersection( action_list, itemid_imp, 
-                                                           itemid_clk,   )
+            reward_actual, reward_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
             regret        =  reward_best - reward_actual   #### Max Value  K items
 
-            #### Update Agent 
             agent.update(action_list, reward_list)
 
 
