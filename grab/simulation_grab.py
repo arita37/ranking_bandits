@@ -230,13 +230,12 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     Args:
     - cfg (str): config
 
+       python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+
+
        itemid_list : Displayed item at time step ts
        itemid_clk :  1 (click) or 0 for items in Displayed items
-
-
-       
-        python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
-
+ 
 
     """    
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
@@ -281,7 +280,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
             #### Metrics Calc 
             reward_best   = np.sum( itemid_clk )   ### All Clicks               
-            reward_actual, reward_list = sum_intersection( action_list, itemid_imp, 
+            reward_actual, reward_list = rwd_sum_intersection( action_list, itemid_imp, 
                                                            itemid_clk,   )
             regret        =  reward_best - reward_actual   #### Max Value  K items
 
@@ -315,36 +314,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
 
-def metrics_add(dd, name, val):
-
-        if name not in dd:
-            dd[name] =[  val ] 
-        else:
-            dd[name].append(  val )
-        return dd
-
-
-def metrics_create(dfg, dd:dict ):
-    df = pd.DataFrame(dd)
-    df = pd.concat((dfg, df), axis=1) ### concat the simul
-
-    for ci in df.columns:
-        x0 = df[ci].values[0]
-        if isinstance(x0, list):
-           df[ci] = df[ci].apply(lambda x: to_str(x))
-
-        if isinstance(x0, float):
-           df[ ci + '_cum'] = df[ci].cumsum()
-    return df
-
-
-
-def to_str(vv, sep=","):
-    if isinstance(vv, str): return vv 
-    return sep.join( [ str(x) for x in vv])
-
-
-def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
+def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """ 
        action_list :  List of Top-K itemid actually dispplayed
 
@@ -357,8 +327,8 @@ def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
     """
     reward_sum = 0.0    ### Sum( click if itemid in action_list ) for this time step.
     for itemk in action_list:
-         idx        = list( itemid_list).index( itemk)       ## Find index
-         reward_sum = reward_sum + itemid_clk[idx]   ## Check if this was clicked.  
+         idx        = list( itemid_list).index( itemk)   ## Find index
+         reward_sum = reward_sum + itemid_clk[idx]       ## Check if this itemid was clicked.  
 
     reward_list = itemid_clk
     return reward_sum, reward_list
@@ -377,6 +347,34 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
         df      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirout2 + f"/data/df_simul_{i}.csv")
         train_grab2(cfg, name, df, K, dirout=dirout2)
+
+
+################################################################################
+def to_str(vv, sep=","):
+    if isinstance(vv, str): return vv 
+    return sep.join( [ str(x) for x in vv])
+
+def metrics_add(dd, name, val):
+    if name not in dd:
+        dd[name] =[  val ] 
+    else:
+        dd[name].append(  val )
+    return dd
+
+
+def metrics_create(dfg, dd:dict ):
+    df = pd.DataFrame(dd)
+    df = pd.concat((dfg, df), axis=1) ### concat the simul
+
+    for ci in df.columns:
+        x0 = df[ci].values[0]
+        if isinstance(x0, list):
+           df[ci] = df[ci].apply(lambda x: to_str(x))
+
+        if isinstance(x0, float):
+           df[ ci + '_cum'] = df[ci].cumsum()
+    return df
+
 
 
 
