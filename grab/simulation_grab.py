@@ -230,7 +230,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     Args:
     - cfg (str): config
 
-       python simulation_grab.py  run2  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
 
 
        itemid_list : Displayed item at time step ts
@@ -246,7 +246,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     T          = len(df)
 
     ### Agent Setup
-    agent_uri   = cfg1['agent'].get('uri', "bandits_to_rank.opponents.grab:GRAB" )
+    agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     agent_pars0 = { 'nb_arms': n_item_all, 'nb_positions': K, 'T': T, 'gamma': 10 }
     agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
