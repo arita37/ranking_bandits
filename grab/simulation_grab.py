@@ -193,14 +193,14 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
        Mutiple rows :  item_id, is_clk
 
     """
+    cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
+    cfgd  = json.loads(cfg0['simul']['probas']) ### load the string
+    locations = list(cfgd['loc_probas'].keys())
+    T         = cfg0['simul'].get( 'T', T)
+
     data = []
-    cfg0 = config_load(cfg)
-    cfg  = json.loads(cfg0['simul']['probas']) ### load the string
-
-    locations = list(cfg['loc_probas'].keys())
-
     for loc_id in locations:
-        item_probas = list(cfg['item_probas'][loc_id])
+        item_probas = list(cfgd['item_probas'][loc_id])
         for ts in range(T):
 
             #### Check if each itemis was clicked or not : indepdantn bernoulli.
@@ -208,10 +208,9 @@ def generate_click_data2(cfg: str, T: int, dirout='data_simulation.csv'):
                 is_clk    = binomial_sample(pi)[0]
                 data.append([ts, int(loc_id), int(item_id), is_clk])
 
-
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
     if dirout is not None:
-        df.to_csv(dirout, index=False)
+        pd_to_file(df, dirout, index=False)
     return df
 
 
@@ -232,12 +231,11 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
     """
     
-    cfg = config_load(cfg)
+    cfg = config_load(cfg) if isinstance(cfg, str) else cfg
 
     nb_arms    = len(df['item_id'].unique())
     loc_id_all = len(df['loc_id'].unique())
     T          = len(df)
-
     n_item_all = nb_arms
 
     agents=[]
@@ -351,11 +349,15 @@ def run2(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=2):
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
     cfgd    = config_load(cfg)
+    cfgd['agent'] = {} if 'agent' not in cfgd else cfgd['agent']
+    cfgd['agent']['K'] = K 
+    cfgd['agent']['T'] = T
+
 
     for i in range(nsimul):
-        df      = generate_click_data2(cfg= cfg, T=T, dirout= None)
+        df      = generate_click_data2(cfg= cfgd, T=T, dirout= None)
         pd_to_file(df, dirout2 + f"/data/data_simulation_{i}.csv")
-        train_grab2(cfg, df, K, dirout=dirout2)
+        train_grab2(cfgd, df, K, dirout=dirout2)
 
 
 
