@@ -223,11 +223,14 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
     Compute the regret at each iteration
 
     Args:
-    - cfg (str): Path to the configuration file containing dataset information and other settings.
+    - cfg (str): config
 
-       Simulations :
+       itemid_list : Displayed item at time step ts
+       itemid_clk :  1 (click) or 0 for items in Displayed items
 
-           #### Flatten the raw simulation t by time step
+
+       
+
     
     Returns:
     None
@@ -238,6 +241,8 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
     nb_arms    = len(df['item_id'].unique())
     loc_id_all = len(df['loc_id'].unique())
     T          = len(df)
+
+    n_item_all =
 
     agents=[]
     #### for each location we simulate the bandit optimizer (ie list of items)
@@ -259,7 +264,7 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
             #### Metrics Calc 
             reward_best   = np.sum(row[ 'itemid_clk' ] )                   
-            reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ] )
+            reward_actual, reward_list = sum_intersection( action_list,  row[ 'itemid_list' ], row[ 'itemid_clk' ],  n_item_all )
             regret        =  reward_best - reward_actual #### Max Value  K items
 
             dd[ 'reward_best' ].append(   reward_best    )
@@ -290,11 +295,19 @@ def train_grab2(cfg, df, K, dirout="ztmp/"):
 
 
 
-def sum_intersection( action_list,  itemid_list,  itemid_clk ):
-    
-    nL = len(itemid_list)
-    for i in range(nL):
+def sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 ):
+    """ 
+       itemid_list:
 
+
+    """
+    reward_sum = 0.0    
+    for itemk in action_list:
+         idx = itemid_list.index(itemk)
+         reward_sum += itemid_clk[idx]
+
+    for i in range(n_item_all)
+    reward_list = itemid_clk
     return reward_actual, reward_list
 
 
