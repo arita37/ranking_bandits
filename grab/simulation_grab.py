@@ -166,7 +166,7 @@
 
 #### Expriments
 
-   python simulation_grab.py  run2  --cfg "config.yaml"   --T 10000    --dirout ztmp/exp/ --K 3
+   python simulation_grab.py  run2  --cfg "config.yaml"   --T 50000    --dirout ztmp/exp/ --K 3
 
 
    python simulation_grab.py  run2  --cfg "config.yaml"   --T 500000    --dirout ztmp/exp/ --K 3
@@ -224,11 +224,10 @@ def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simul
                 data.append([ts, int(loc_id), int(item_id), is_clk])
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
 
+    ### Stats
     dfg = df.groupby(['loc_id', 'item_id']).agg({'is_clk': 'sum', 'ts': 'count'}).reset_index()
     dfg.columns = ['loc_id', 'item_id', 'n_clk', 'n_imp']
     dfg['ctr'] = dfg['n_clk'] / dfg['n_imp']
-    log(dfg)
-
 
 
     if dirout is not None:
@@ -322,7 +321,10 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         # log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+
+        dfs = df.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
         log('action Final\n', df[[ 'action_list' ]])
+        log(dfs)
 
 
         log("###### Agent Save ###########") 
