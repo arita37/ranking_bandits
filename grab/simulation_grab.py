@@ -277,11 +277,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     ### Agent Setup
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
-    agent_pars0 = { 'nb_arms': cc.n_item_all,  'T': -1,  }
-    agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
-
-
     agents=[]
+    
     #### for each location: a New bandit optimizer
     for loc_id in range(cc.loc_id_all):
 
@@ -294,7 +291,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
         log("\n#### Init New Agent ")
-        agent_pars['T'] = len(dfg) ## Correct T
+        agent_pars['T']       = len(dfg)      ## Correct T 
+        agent_pars['nb_arms'] = cc.n_item_all ## Correct                
         agentClass = load_function_uri(agent_uri)
         agent      = agentClass(**agent_pars)
         cc.agent_pars = agent_pars        
@@ -451,7 +449,7 @@ if __name__ == "__main__":
 
 ######################################################################################################
 ################ Version 1 : Not working Only one click per time step ################################
-def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
+def zz_generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
 
@@ -494,7 +492,7 @@ def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
 
 
 
-def train_grab(cfg, df, K, dirout="ztmp/"):
+def zz_train_grab(cfg, df, K, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
     Compute the regret at each iteration
@@ -557,7 +555,7 @@ def train_grab(cfg, df, K, dirout="ztmp/"):
     return agents
 
 
-def eval_agent(agents, df):
+def zz_eval_agent(agents, df):
     """
     Evaluate Bandit Algorithm Agents for Item Ranking
     
@@ -603,7 +601,7 @@ def eval_agent(agents, df):
 
 
 
-def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=5):    
+def zz_run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=5):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T_{T}"
