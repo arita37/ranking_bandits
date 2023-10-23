@@ -6,7 +6,6 @@
 
 ### experiments
 
-
    ### Version 2 : this the one we focus on
    export pyinstrument=0
    python simulation_grab.py  run2  --cfg "config.yaml"   --T 20    --dirout ztmp/exp/ --K 3
@@ -165,6 +164,14 @@
 
 
 
+#### Expriments
+
+   python simulation_grab.py  run2  --cfg "config.yaml"   --T 10000    --dirout ztmp/exp/ --K 3
+
+
+   python simulation_grab.py  run2  --cfg "config.yaml"   --T 500000    --dirout ztmp/exp/ --K 3
+
+
 """
 import pandas as pd, numpy as np, os,json
 import fire, pyinstrument
@@ -215,10 +222,18 @@ def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simul
             for item_id, pi in  enumerate(item_probas): 
                 is_clk    = binomial_sample(pi)[0]
                 data.append([ts, int(loc_id), int(item_id), is_clk])
-
     df = pd.DataFrame(data, columns=['ts', 'loc_id', 'item_id', 'is_clk'])
+
+    dfg = df.groupby(['loc_id', 'item_id']).agg({'is_clk': 'sum', 'ts': 'count'}).reset_index()
+    dfg.columns = ['loc_id', 'item_id', 'n_clk', 'n_imp']
+    dfg['ctr'] = dfg['n_clk'] / dfg['n_imp']
+    log(dfg)
+
+
+
     if dirout is not None:
         pd_to_file(df, dirout, index=False, show=1)
+        pd_to_file(dfg, dirout.replace(".csv", "_stats.csv"), index=False, show=1)        
     return df
 
 
@@ -231,6 +246,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     - cfg (str): config
 
        python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
+
+
+       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 50000    --dirout ztmp/exp/ --K 2
 
 
        itemid_list : Displayed item at time step ts
@@ -263,7 +281,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
         dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
-        log('\n#### Simul data ', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
+        log('\n#### Simul data \n', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
 
 
         log("\n#### Init New Agent ")
@@ -275,14 +293,14 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         ### Metrics
         dd = {}
         log("\n##### Start Simul  ")
-        for t, row in dfg.iterrows():
+        for t in range(0, len(dfg)):
 
             # Return One action :  1 full list of item_id  to be Displayed
             action_list, _ = agent.choose_next_arm()
 
             #### ENV reward / clk 
-            itemid_imp = row['itemid_list']
-            itemid_clk = row['itemid_clk' ]
+            itemid_imp = dfg['itemid_list'].values[t]
+            itemid_clk = dfg['itemid_clk' ].values[t]
 
             rwd_best             = np.sum( itemid_clk )   ### All Clicks               
             rwd_actual, rwd_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
@@ -304,6 +322,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         # log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+        log('action Final\n', df[[ 'action_list' ]])
 
 
         log("###### Agent Save ###########") 

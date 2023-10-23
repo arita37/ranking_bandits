@@ -10,13 +10,14 @@ simul:
 
       item_probas:
             # locid:   [itemid0, itemid1, itemid3, ...]
-            0:  [ 0.1, 0.2 , 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95 ]
+            #0:  [ 0.1, 0.2 , 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95 ]
+            0:  [ 0.1, 0.3 , 0.4, 0.5, 0.8, 0.9, 0.95 ]
 
 
   agent: 
      agent_uri:   "bandits_to_rank.opponents.grab:GRAB"
      agent_pars:
-        nb_positions:      4   ###only display top 4
+        nb_positions:      3   ###only display top 4
         gamma:            10
   
 
