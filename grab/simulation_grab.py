@@ -241,6 +241,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
 
+    ### ENV Setup
     n_item_all = len(df['item_id'].unique())
     loc_id_all = len(df['loc_id'].unique())
     T          = len(df)
@@ -248,7 +249,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     ### Agent Setup
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
-    agent_pars0 = { 'nb_arms': n_item_all, 'nb_positions': K, 'T': T, 'gamma': 10 }
+    agent_pars0 = { 'nb_arms': n_item_all,  'T': T,  }
     agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
     log(agent_pars)
 
@@ -257,7 +258,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     #### for each location: a New bandit optimizer
     for loc_id in range(loc_id_all):
 
-        ### Flatten simulation data per time step
+        ### Env: Flatten simulation data per time step
         dfi         = df[df['loc_id'] == loc_id ]
         dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
@@ -275,24 +276,25 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         dd = {}
         log("\n##### Start Simul  ")
         for t, row in dfg.iterrows():
-            itemid_imp = row['itemid_list']
-            itemid_clk = row['itemid_clk' ]
 
             # Return One action :  1 full list of item_id  to be Displayed
             action_list, _ = agent.choose_next_arm()
 
-            #### Metrics Calc 
-            reward_best   = np.sum( itemid_clk )   ### All Clicks               
-            reward_actual, reward_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
-            regret        =  reward_best - reward_actual   #### Max Value  K items
+            #### ENV reward / clk 
+            itemid_imp = row['itemid_list']
+            itemid_clk = row['itemid_clk' ]
 
-            agent.update(action_list, reward_list)
+            rwd_best             = np.sum( itemid_clk )   ### All Clicks               
+            rwd_actual, rwd_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
+            regret               = rwd_best - rwd_actual   #### Max Value  K items
 
+
+            agent.update(action_list, rwd_list)
 
             dd = metrics_add(dd, 'action_list',   action_list)
-            dd = metrics_add(dd, 'reward_best',   reward_best    )
-            dd = metrics_add(dd, 'reward_actual', reward_actual    )
-            dd = metrics_add(dd, 'reward_list',   reward_list    )
+            dd = metrics_add(dd, 'rwd_best',      rwd_best    )
+            dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
+            dd = metrics_add(dd, 'rwd_list',      rwd_list    )
             dd = metrics_add(dd, 'regret',        regret    )
             dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
 
@@ -339,15 +341,15 @@ def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 
 def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
 
     dt = date_now(fmt="%Y%m%d_%H%M")
-    dirout2 = dirout + f"/{dt}_T_{T}"
+    dirout2 = dirout + f"/{dt}_T{T}"
     # cfg0    = config_load(cfg)
 
 
     for i in range(nsimul):
         dirouti = f"{dirout2}/sim{i}"
         df      = generate_click_data2(cfg= cfg, name=name, T=T, 
-                                       dirout= dirout2 + f"/data/df_simul_{i}.csv")
-        train_grab2(cfg, name, df, K, dirout=dirout2)
+                                       dirout= dirouti + f"/data/df_simul_{i}.csv")
+        train_grab2(cfg, name, df, K=K, dirout=dirouti)
 
 
 ################################################################################
@@ -369,7 +371,7 @@ def metrics_create(dfg, dd:dict ):
 
     for ci in df.columns:
         x0 = df[ci].values[0]
-        if isinstance(x0, list):
+        if isinstance(x0,list) or isinstance(x0, np.ndarray ):
            df[ci] = df[ci].apply(lambda x: to_str(x))
 
         if isinstance(x0, float):
