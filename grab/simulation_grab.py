@@ -177,12 +177,16 @@ import pandas as pd, numpy as np, os,json
 import fire, pyinstrument
 from scipy.stats import kendalltau
 from collections import defaultdict
+from box import Box
 from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
 date_now, load_function_uri)
 
 
 from bandits_to_rank.opponents.grab import GRAB
 
+def log3(*s):
+    if os.environ.get('debug', "") == "1":
+        print(*s, flush=True)
 
 #########################################################################################
 ######### Version 2 : Multiple Clicks ###############################################################
@@ -247,7 +251,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
        python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
 
 
-       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 50000    --dirout ztmp/exp/ --K 2
+       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10000    --dirout ztmp/exp/ --K 2
 
 
        itemid_list : Displayed item at time step ts
@@ -258,22 +262,23 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
 
+    cc = Box({})
+
     ### ENV Setup
-    n_item_all = len(df['item_id'].unique())
-    loc_id_all = len(df['loc_id'].unique())
-    T          = len(df)
+    cc.n_item_all = len(df['item_id'].unique())
+    cc.loc_id_all = len(df['loc_id'].unique())
+    cc.nrows      = len(df)
 
     ### Agent Setup
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
-    agent_pars0 = { 'nb_arms': n_item_all,  'T': T,  }
+    agent_pars0 = { 'nb_arms': cc.n_item_all,  'T': -1,  }
     agent_pars  = {**agent_pars0, **agent_pars, } ### OVerride default values
-    log(agent_pars)
 
 
     agents=[]
     #### for each location: a New bandit optimizer
-    for loc_id in range(loc_id_all):
+    for loc_id in range(cc.loc_id_all):
 
         ### Env: Flatten simulation data per time step
         dfi         = df[df['loc_id'] == loc_id ]
@@ -284,10 +289,12 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
         log("\n#### Init New Agent ")
+        agent_pars['T'] = len(dfg) ## Correct T
         agentClass = load_function_uri(agent_uri)
         agent      = agentClass(**agent_pars)
+        cc.agent_pars = agent_pars        
         # agent = GRAB(**agent_pars)
-        log(agent)
+        log(agent)    
 
         ### Metrics
         dd = {}
@@ -315,6 +322,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             dd = metrics_add(dd, 'regret',        regret    )
             dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
 
+        ### Exp Params 
+        log(cc)
+        json_save(cc, f"{dirout}/{loc_id}/params.json")    
 
         log("###### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
@@ -324,7 +334,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
         dfs = df.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
         log('action Final\n', df[[ 'action_list' ]])
-        log(dfs)
+        pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
+
 
 
         log("###### Agent Save ###########") 
@@ -349,12 +360,14 @@ def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 
 
 
     """
-    reward_sum = 0.0    ### Sum( click if itemid in action_list ) for this time step.
+    reward_sum  = 0.0    ### Sum( click if itemid in action_list ) for this time step.
+    reward_list = []
     for itemk in action_list:
          idx        = list( itemid_list).index( itemk)   ## Find index
-         reward_sum = reward_sum + itemid_clk[idx]       ## Check if this itemid was clicked.  
+         rwdi       = itemid_clk[idx]
+         reward_sum = reward_sum + rwdi       ## Check if this itemid was clicked.  
+         reward_list.append(rwdi)
 
-    reward_list = itemid_clk
     return reward_sum, reward_list
 
 
