@@ -166,10 +166,16 @@
 
 #### Expriments
 
-   python simulation_grab.py  run2  --cfg "config.yaml"   --T 50000    --dirout ztmp/exp/ --K 3
+
+   python simulation_grab.py  run2  --K 3 --name simul   --T 100     --dirout ztmp/exp/  --cfg config.yaml 
 
 
-   python simulation_grab.py  run2  --cfg "config.yaml"   --T 500000    --dirout ztmp/exp/ --K 3
+   python simulation_grab.py  run2  --K 3 --name simul   --T 10000    --dirout ztmp/exp/  --cfg config.yaml 
+
+
+   python simulation_grab.py  run2  --K 3 --name simul5   --T 50000    --dirout ztmp/exp/  --cfg config.yaml 
+
+
 
 
 """
