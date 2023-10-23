@@ -14,7 +14,7 @@
 
 
    #### Old not working. 
-   ####python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+      ####python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
 ### Description:
@@ -254,10 +254,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     Args:
     - cfg (str): config
 
-       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
+         python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
 
-
-       python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10000    --dirout ztmp/exp/ --K 2
+         python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10000    --dirout ztmp/exp/ --K 2
 
 
        itemid_list : Displayed item at time step ts
@@ -362,7 +361,7 @@ def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 
        itemid_list:   List of all item_id
        itemid_clk:    List  of 0 / 1 (is clicked), same size than itemid_list
 
-       Return Sum(reward if itemid is inside action_list )
+       Return Sum(reward if itemid is inside action_list ) Only for action_list
 
 
     """
@@ -379,7 +378,9 @@ def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 
 
 
 def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+    """ Run Simulation 
 
+    """
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T{T}"
     # cfg0    = config_load(cfg)
@@ -421,11 +422,35 @@ def metrics_create(dfg, dd:dict ):
 
 
 
-
-
-
 ##########################################################################################
-################ Version 1 : Only one click per time step ################################
+####### utiles
+def binomial_sample(p: float, size: int = 1, n: int = 1):
+    return np.random.binomial(n=n, p=p, size=size)
+
+
+
+if __name__ == "__main__":
+    if os.environ.get('pyinstrument', "0") == "1":
+        profiler = pyinstrument.Profiler()
+        profiler.start()
+
+        fire.Fire()
+        profiler.stop()
+        print(profiler.output_text(unicode=True, color=True))
+    else:
+        fire.Fire()
+
+
+
+
+
+
+
+
+
+
+######################################################################################################
+################ Version 1 : Not working Only one click per time step ################################
 def generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
@@ -602,26 +627,4 @@ def run(cfg:str="config.yaml", dirout='ztmp/exp/', T=1000, nsimul=1, K=5):
     metrics = {'ctr_avg_per_item' : res2,
                'config': cfgd}
     json_save(metrics, dirout2 + "/metric.json" )
-
-
-
-
-##########################################################################################
-####### utiles
-def binomial_sample(p: float, size: int = 1, n: int = 1):
-    return np.random.binomial(n=n, p=p, size=size)
-
-
-
-if __name__ == "__main__":
-    if os.environ.get('pyinstrument', "0") == "1":
-        profiler = pyinstrument.Profiler()
-        profiler.start()
-
-        fire.Fire()
-        profiler.stop()
-        print(profiler.output_text(unicode=True, color=True))
-    else:
-        fire.Fire()
-
 
