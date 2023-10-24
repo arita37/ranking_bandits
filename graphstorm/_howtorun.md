@@ -81,8 +81,8 @@ The output will look like the screenshot below. It shows the information of auth
 
 ```
 python3 -m graphstorm.gconstruct.construct_graph \
-           --conf-file $WORKSPACE/acm_raw/config.json \
-           --output-dir $WORKSPACE/acm_nc \
+           --conf-file $WORKSPACE/ztmp/acm_raw/config.json \
+           --output-dir $WORKSPACE/ztmp/acm_nc \
            --num-parts 1 \
            --graph-name acm
 ```
@@ -128,7 +128,7 @@ python3 -m graphstorm.run.gs_node_classification \
 ```
 python3 -m graphstorm.run.gs_node_classification \
         --workspace $WORKSPACE \
-        --part-config $WORKSPACE/acm_nc/acm.json \
+        --part-config $WORKSPACE/ztmp/acm_nc/acm.json \
         --ip-config /tmp/ip_list.txt \
         --num-trainers 1 \
         --num-servers 1 \
@@ -150,7 +150,7 @@ python3 -m graphstorm.run.gs_node_classification \
 ```
 python3 -m graphstorm.run.gs_node_classification \
         --workspace $WORKSPACE/workspace \
-        --part-config $WORKSPACE/acm_nc/acm.json \
+        --part-config $WORKSPACE/ztmp/acm_nc/acm.json \
         --ip-config /tmp/ip_list.txt \
         --num-trainers 1 \
         --num-servers 1 \
