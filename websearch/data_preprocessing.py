@@ -114,6 +114,7 @@ def check_file(in_file,init_qid):
         for line in data:
                 qid = int(line.split(' ')[1].split(':')[1])
                 relevance_scores.add(int(line.split(' ')[0]))
+                print(prev, qid)
                 if prev != qid :
                     prev =qid 
                     if flag ==0 :
@@ -130,7 +131,7 @@ def check_file(in_file,init_qid):
 
 
 def write_to_pickle(in_file, out_file,feat_start,emb_size,init_qid=-1,chunk_size=250):
-    assert(init_qid !=-1)
+    # assert(init_qid !=-1)
     check = check_file(in_file,init_qid)
     assert(check[0] ==1)
     print("Relevance Levels:"+str(check[1]))
@@ -168,13 +169,13 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-emb_size','--embedding_size',type=int,default=46)
-    parser.add_argument('-train','--parse_train',type=str,default="MQ2007")
-    parser.add_argument('-val','--parse_val',type=str,default="MQ2007")
+    parser.add_argument('-train','--parse_train',type=str,default="MQ2007/Fold1/train.txt")
+    parser.add_argument('-val','--parse_val',type=str,default="MQ2007/Fold1/vali.txt")
     parser.add_argument('-test','--parse_test',type=str,default="MQ2007/Fold1/test.txt")
-    parser.add_argument('-out','--parse_output',type=str,default="MQ2007/Fold1/chunked")
-    parser.add_argument('-val_init','--val_init',type=int,default=-1)
+    parser.add_argument('-out','--parse_output',type=str,default="MQ2007/chunked")
+    parser.add_argument('-val_init','--val_init',type=int,default=6008)
     parser.add_argument('-test_init','--test_init',type=int,default=7968)
-    parser.add_argument('-train_init','--train_init',type=int,default=-1)
+    parser.add_argument('-train_init','--train_init',type=int,default=10)
     parser.add_argument('-feat_start','--feat_start',type=int,default=2)
 
 
@@ -182,12 +183,12 @@ def main():
 
     args=parser.parse_args()
 
-    assert(args.test_init != -1)
+    # assert(args.test_init != -1)
    
     train = args.parse_train
     val = args.parse_val
     test = args.parse_test
-
+    
     write_to_pickle(test, os.path.join(args.parse_output,"test_%03d.bin.p"),args.feat_start,args.embedding_size, init_qid=args.test_init,chunk_size=100000000)
 
     write_to_pickle(val, os.path.join(args.parse_output,"val_%03d.bin.p"), args.feat_start,args.embedding_size,init_qid=args.val_init,chunk_size=100000000)
