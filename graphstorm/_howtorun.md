@@ -158,6 +158,8 @@ python3 -m graphstorm.run.gs_node_classification \
         --save-model-path $WORKSPACE/acm_nc/both_models \
         --node-feat-name paper:feat author:feat subject:feat \
         --lm-train-nodes 10
+
+        
 ```
 
 <img src="./train2_start.png" width = "600" height = "300" alt="1" align=center />
@@ -181,6 +183,8 @@ python3 -m graphstorm.run.gs_node_classification \
         --node-feat-name paper:feat author:feat subject:feat \
         --lm-encoder-only \
         --lm-train-nodes 10
+
+
 ```
 
 <img src="./train3_start.png" width = "600" height = "200" alt="1" align=center />
