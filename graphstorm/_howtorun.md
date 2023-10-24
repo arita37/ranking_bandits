@@ -97,16 +97,34 @@ Output will be like this:
 # Launch GraphStorm Trainig without Fine-tuning BERT Models
 
 ```
+rm /tmp/ip_list.txt
+
 touch /tmp/ip_list.txt
 echo 127.0.0.1 > /tmp/ip_list.txt
+
+
+ echo "22-arita37-rankingbandits-n9l5syb0gmg.ws-us105.gitpod.io" > /tmp/ip_list.txt
+
+
+
+
+gp ports expose 22
+
+gp ports visibility 22:public
+
+https://22-arita37-rankingbandits-n9l5syb0gmg.ws-us105.gitpod.io
+
+
 ```
 
 [Notice] If you only have one GPU, ```--num-trainers``` should be 1, or the trainning can't be launched.
 
 ```
+
+
 python3 -m graphstorm.run.gs_node_classification \
         --workspace $WORKSPACE \
-        --part-config $WORKSPACE/acm_nc/acm.json \
+        --part-config $WORKSPACE/ztmp/acm_nc/acm.json \
         --ip-config /tmp/ip_list.txt \
         --num-trainers 1 \
         --num-servers 1 \
@@ -115,6 +133,8 @@ python3 -m graphstorm.run.gs_node_classification \
         --cf $WORKSPACE/graphstorm/examples/use_your_own_data/acm_lm_nc.yaml \
         --save-model-path $WORKSPACE/acm_nc/models \
         --node-feat-name paper:feat author:feat subject:feat
+
+
 ```
 
 <img src="./train1_start.png" width = "800" height = "200" alt="1" align=center />
