@@ -17,22 +17,21 @@ Install
     pip install torch==1.6.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 
 
+    ### Need old version to run  (aug 2023)
+    pip install numpy==1.19.5 pandas==1.2.5  matplotlib==3.5.1 --dry-run
+    pip install imageio    --dry-run
+    pip install utilmy fire
+
+
     pip install fastrec    --dry-run 
     pip install faiss-cpu  --dry-run 
 
-    pip install imageio matplotlib   --dry-run
+
+    cd examples/
+    python karateclub.py  run --epoch 1
 
 
-    cd graphrec/examples/
-    python karateclub.py 
 
-
-#### Error 
-
-        AttributeError: module 'numpy' has no attribute 'bool'.
-        `np.bool` was a deprecated alias for the builtin `bool`. To avoid this error in existing code, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
-        The aliases was originally deprecated in NumPy 1.20; for more details and guidance see the original release note at:
-            https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
 
 
 

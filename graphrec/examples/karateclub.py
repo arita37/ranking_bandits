@@ -1,3 +1,8 @@
+""" 
+
+
+
+"""
 import networkx as nx
 import pandas as pd
 import imageio
@@ -7,7 +12,10 @@ import pathlib
 
 from fastrec import GraphRecommender
 
-def animate(labelsnp,all_embeddings,mask):
+from utilmy import (log, os_makedirs, pd_read_file)
+
+
+def animate(labelsnp, all_embeddings,mask, dirout="ztmp/"):
     labelsnp = labelsnp[mask]
 
     for i,embedding in enumerate(tqdm.tqdm(all_embeddings)):
@@ -26,7 +34,7 @@ def animate(labelsnp,all_embeddings,mask):
         plt.savefig('./ims/{n}.png'.format(n=i))
         plt.close()
 
-    imagep = pathlib.Path('./ims/')
+    imagep = pathlib.Path( dirout + '/ims/')
     images = imagep.glob('*.png')
     images = list(images)
     images.sort(key=lambda x : int(str(x).split('/')[-1].split('.')[0]))
@@ -35,7 +43,8 @@ def animate(labelsnp,all_embeddings,mask):
             data = imageio.imread(image.__str__())
             writer.append_data(data)
 
-if __name__=='__main__':
+
+def run(epoch=2):
     g = nx.karate_club_graph()
     nodes = list(g.nodes)
     e1,e2 = zip(*g.edges)
@@ -47,13 +56,19 @@ if __name__=='__main__':
     sage.add_edges(e2,e1)
     sage.update_labels(attributes.community)
 
-    epochs, batch_size = 150, 15
+    epochs, batch_size = epoch, 15
     _,_,all_embeddings = sage.train(epochs, batch_size, unsupervised = True, learning_rate=1e-2, 
                             test_every_n_epochs=10, return_intermediate_embeddings=True)
 
-    animate(sage.labels,all_embeddings,sage.entity_mask)
+    log(all_embeddings)
+    #animate(sage.labels,all_embeddings,sage.entity_mask)
 
     print(sage.query_neighbors([0,33],k=5))
 
-    sage.start_api()
+    # sage.start_api()
 
+
+
+if __name__=='__main__':
+   import fire  
+   fire.Fire()
