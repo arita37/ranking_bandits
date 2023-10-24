@@ -1,5 +1,48 @@
 # FastRec
 
+Install 
+
+
+pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+pip install dgl==1.0.4 -f https://data.dgl.ai/wheels-internal/repo.html
+
+
+
+pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
+
+
+### breask with recent DGL version
+### Aug 2020 version
+https://pypi.org/project/dgl/0.5.0/
+
+List Python versions in the terminal:
+
+pyenv install --list | grep " 3\.[678]"
+Install Python version if not in list:
+
+pyenv install 3.8.6
+Create a virtual env with a Python version:
+
+pyenv virtualenv 3.8.6 project1
+List versions of virtual environments:
+
+pyenv versions
+Activate a virtual version:
+
+pyenv activate project1
+
+
+pip install fastrec    --dry-run 
+pip install faiss-cpu  --dry-run 
+
+pip install imageio matplotlib   --dry-run
+
+
+cd graphrec/examples/
+python karateclub.py 
+
+
+
 Graph neural networks are capable of capturing the structure and relationships between nodes in a graph as dense vectors. 
 With these dense vectors, we can identify pairs of nodes that are similar, identify communities and clusters, or train
 a linear classification model with the dense vectors as inputs. 
@@ -33,6 +76,8 @@ As an example, we can generate embeddings for [Zachary's karate club](https://en
 First, convert the graph into a node and edgelist format.
 
 ```python
+cd examples
+
 import networkx as nx
 g = nx.karate_club_graph()
 nodes = list(g.nodes)

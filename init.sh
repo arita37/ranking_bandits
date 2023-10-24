@@ -17,3 +17,18 @@ export PS1='\W$ '
 
 
 
+# List Python versions in the terminal:
+
+# pyenv install --list | grep " 3\.[678]"
+# Install Python version if not in list:
+
+# pyenv install 3.8.6
+# Create a virtual env with a Python version:
+
+# pyenv virtualenv 3.8.6 project1
+# List versions of virtual environments:
+
+# pyenv versions
+# Activate a virtual version:
+
+# pyenv activate project1
