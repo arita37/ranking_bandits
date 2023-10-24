@@ -70,7 +70,7 @@ def ext_model_eval(model,args,eval_data="test",trec_file="trecfile.txt"):
         for step, contexts in enumerate(data_preprocessing.BatchDataLoader(dataset, shuffle=False)):
             print("Done %2d chunck, %4d/%4d context\r" % (phase+1, step + 1, len(dataset)), end='')            
             context = contexts[0]
-            q_a = torch.autograd.Variable(torch.from_numpy(context.features).type(torch.float)).cuda()
+            q_a = torch.autograd.Variable(torch.from_numpy(context.features).type(torch.float))
             outputs = model(q_a)
             if isinstance(outputs,list):
                 outputs = outputs[0]
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--data_dir', type=str, default='trec_qa/pickle_data/')
-    parser.add_argument('--model_file', type=str, default='model/select.ans')
+    parser.add_argument('--model_file', type=str, default='model/best_model.ans')
     parser.add_argument('--trec_file',type=str,default="trec_file.txt")
     parser.add_argument('--statistics',action="store_true")
     parser.add_argument('--device', type=int, default=0,
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     #assert(args.max_num_of_ans!= -1)
 
-    torch.cuda.set_device(args.device)
+    # torch.cuda.set_device(args.device)
     if args.statistics:
         statistical_tests(args)
         exit() 
