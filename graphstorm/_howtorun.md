@@ -2,14 +2,26 @@
 
 # Setup Environment
 
+   pyenv global 3.8.13 && python --version
+   python -c 'import os; print(os)'
+   pip list 
 
-pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-pip install dgl==1.0.4 -f https://data.dgl.ai/wheels-internal/repo.html
+#### Pip install
+        pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+        pip install dgl==1.0.4 -f https://data.dgl.ai/wheels-internal/repo.html
 
-### Check
-pip install graphstorm --dry-run
+        ### Check
+        pip install graphstorm --dry-run
 
-pip install graphstorm 
+        pip install graphstorm 
+
+
+#### Sample test
+        export WORKSPACE="$(pwd)/graphstorm"
+        cd $WORKSPACE/examples
+
+        python3 acm_data.py --output-path $WORKSPACE/ztmp/acm_raw --output-type raw_w_text
+
 
 
 
