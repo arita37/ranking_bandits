@@ -1,14 +1,15 @@
 import pandas as pd
 import subprocess
 import os
+import math
+
+PROBA = 1. / math.comb(7, 3)
 
 
-def find_convergence_index(lst):
-    for i in range(len(lst)):
-        if len(set(lst[i:])) == 1:
-            return i
-    return i
+def is_convergent(df, factor):
+    return df.values.max()/df.values.sum()>factor*PROBA
 
+    
 
 def get_latest_folder_in_directory(directory_path):
     folders = [os.path.join(directory_path, folder) for folder in os.listdir(
@@ -20,21 +21,29 @@ def get_latest_folder_in_directory(directory_path):
     return latest_folder
 
 
-results = []
-for _ in range(20):
+
+def main():
+    T = 1000
     bash_command = "python simulation_grab.py  run2  --K 3 --name simul   --T 20000     --dirout ztmp/exp/  --cfg config.yaml"
     subprocess.run(bash_command, shell=True, stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE, text=True)
+                stderr=subprocess.PIPE, text=True)
     folder = "ztmp\\exp"
     results_path = get_latest_folder_in_directory(folder)
     results_path = os.path.join(
         results_path, "sim0\\0\\metrics\\simul_metrics.csv")
-    action_lists = pd.read_csv(results_path, sep="\t")["action_list"]
-    action_lists = action_lists.apply(
-        lambda x: [int(action) for action in x.split(',')])
-    action_lists = action_lists.apply(lambda x: sorted(x))
-    action_lists = action_lists.apply(lambda x: tuple(x)).values
-    res = find_convergence_index(action_lists)
-    results.append(res)
+    df_experiment = pd.read_csv(results_path, sep="\t")
 
-print(results)
+    for ts in range(40, T):
+
+        df = df_experiment[df_experiment['ts']<=ts]
+        df["action_list"] = df["action_list"].apply(
+            lambda x: tuple(sorted([int(action) for action in x.split(',')])))
+        df = df.groupby('action_list').count()['ts']
+        if is_convergent(df, factor=1):
+            print(f'convergence at index = {ts}')
+            print(df)
+            return ts
+
+
+if __name__=="__main__":
+    main()
