@@ -3,27 +3,55 @@
 Install 
 
 
-pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-pip install dgl==1.0.4 -f https://data.dgl.ai/wheels-internal/repo.html
+###Install Python version if not in list:
+   pyenv install 3.8.15 
+   pyenv global 3.8.15 && python --version
+   pip install --upgrade pip 
+   pip list 
+   
+
+#### Old versio of DGL
+    pip install dgl==0.5.3 -f https://data.dgl.ai/wheels-internal/repo.html
 
 
+    pip install torch==1.6.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 
-pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
+
+    pip install fastrec    --dry-run 
+    pip install faiss-cpu  --dry-run 
+
+    pip install imageio matplotlib   --dry-run
+
+
+    cd graphrec/examples/
+    python karateclub.py 
+
+
+#### Error 
+
+        AttributeError: module 'numpy' has no attribute 'bool'.
+        `np.bool` was a deprecated alias for the builtin `bool`. To avoid this error in existing code, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+        The aliases was originally deprecated in NumPy 1.20; for more details and guidance see the original release note at:
+            https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+
+
 
 
 ### breask with recent DGL version
 ### Aug 2020 version
 https://pypi.org/project/dgl/0.5.0/
 
-List Python versions in the terminal:
 
-pyenv install --list | grep " 3\.[678]"
-Install Python version if not in list:
+##List Python versions in the terminal:
+   pyenv install --list | grep " 3\.[8]"
 
-pyenv install 3.8.6
-Create a virtual env with a Python version:
 
-pyenv virtualenv 3.8.6 project1
+
+
+### Create a virtual env with a Python version:
+  pyenv virtualenv 3.8.13 graphrec
+
+
 List versions of virtual environments:
 
 pyenv versions
@@ -32,14 +60,6 @@ Activate a virtual version:
 pyenv activate project1
 
 
-pip install fastrec    --dry-run 
-pip install faiss-cpu  --dry-run 
-
-pip install imageio matplotlib   --dry-run
-
-
-cd graphrec/examples/
-python karateclub.py 
 
 
 
