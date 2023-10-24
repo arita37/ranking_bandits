@@ -24,10 +24,10 @@
         conda activate gstorm
         which pip 
 
-ls  
-/workspace/miniconda/envs/gstorm/bin/pip list
+        ls  
+        /workspace/miniconda/envs/gstorm/bin/pip list
 
-echo $PYTHONPATH
+        echo $PYTHONPATH
 
 
 
@@ -122,20 +122,32 @@ The output will look like the screenshot below. It shows the information of auth
 # Launch GraphStorm Trainig without Fine-tuning BERT Models
         rm /tmp/ip_list.txt
 
+### SSH server install
+        sudo apt-get install -y openssh-server
+        sudo /etc/init.d/ssh restart
+
+        ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
+        cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
         touch /tmp/ip_list.txt
-        echo 127.0.0.1 > /tmp/ip_list.txt
+        echo 127.0.0.1 >  /tmp/ip_list.txt
+
+### kill port
+sudo lsof -i :22
+sudo kill -9 4535
 
 
 
 [Notice] If you only have one GPU, ```--num-trainers``` should be 1, or the trainning can't be launched.
 
+        source activate gstorm
 
         python -c 'import graphstorm; print(graphstorm)'
 
         python -m graphstorm.run.gs_node_classification \
                 --workspace $WORKSPACE \
                 --part-config $WORKSPACE/ztmp/acm_nc/acm.json \
-                --ip-config /tmp/ip_list.txt \
+                --ip-config  "/tmp/ip_list.txt" \
                 --num-trainers 1 \
                 --num-servers 1 \
                 --num-samplers 0 \
@@ -143,14 +155,6 @@ The output will look like the screenshot below. It shows the information of auth
                 --cf $WORKSPACE/examples/use_your_own_data/acm_lm_nc.yaml \
                 --save-model-path $WORKSPACE/acm_nc/models \
                 --node-feat-name paper:feat author:feat subject:feat
-
-
-
-
-<module 'pandas' from '/workspace/.pyenv_mirror/user/current/lib/python3.8/site-packages/pandas/__init__.py'>
-
-/workspace/miniconda/envs/gstorm/bin:/workspace/miniconda/condabin:/home/gitpod/.sdkman/candidates/maven/current/bin:/home/gitpod/.sdkman/candidates/java/current/bin:/home/gitpod/.sdkman/candidates/gradle/current/bin:/workspace/.cargo/bin:/home/gitpod/.rvm/gems/ruby-3.2.2/bin:/home/gitpod/.rvm/gems/ruby-3.2.2@global/bin:/home/gitpod/.rvm/rubies/ruby-3.2.2/bin:/home/gitpod/.pyenv/shims:/workspace/go/bin:/home/gitpod/.nix-profile/bin:/ide/bin/remote-cli:/ide/bin/remote-cli:/home/gitpod/go/bin:/home/gitpod/go-packages/bin:/home/gitpod/.nvm/versions/node/v20.8.1/bin:/home/gitpod/.yarn/bin:/home/gitpod/.pnpm:/home/gitpod/.pyenv/bin:/home/gitpod/.rvm/bin:/home/gitpod/.cargo/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/gitpod/.local/bin:/usr/games:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/gitpod/.nvm/versions/node/v20.8.1/bin:/home/gitpod/.rvm/bin
-
 
 
 
@@ -164,7 +168,7 @@ The output will look like the screenshot below. It shows the information of auth
                 --num-servers 1 \
                 --num-samplers 0 \
                 --ssh-port 22 \
-                --cf $WORKSPACE/graphstorm/examples/use_your_own_data/acm_lm_nc.yaml \
+                --cf $WORKSPACE/examples/use_your_own_data/acm_lm_nc.yaml \
                 --save-model-path $WORKSPACE/acm_nc/both_models \
                 --node-feat-name paper:feat author:feat subject:feat \
                 --lm-train-nodes 10
@@ -179,7 +183,7 @@ The output will look like the screenshot below. It shows the information of auth
                 --num-servers 1 \
                 --num-samplers 0 \
                 --ssh-port 22 \
-                --cf $WORKSPACE/graphstorm/examples/use_your_own_data/acm_lm_nc.yaml \
+                --cf $WORKSPACE/examples/use_your_own_data/acm_lm_nc.yaml \
                 --save-model-path $WORKSPACE/acm_nc/only_bert_models \
                 --node-feat-name paper:feat author:feat subject:feat \
                 --lm-encoder-only \

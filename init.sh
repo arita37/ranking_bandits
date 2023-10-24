@@ -57,6 +57,16 @@ function conda_install() {
 
 
 
+function killport() {
+
+   sudo lsof -i :22
+   echo "    sudo lsof -i :22" 
+   echo "sudo kill -9 4535"
+
+
+
+}
+
 ##### Python install
 #   pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
 #   python -c 'import os; print(os)'
