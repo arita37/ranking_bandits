@@ -4,7 +4,7 @@
 
    pyenv global 3.8.13 && python --version
    python -c 'import os; print(os)'
-   pip list 
+   pip3 list 
 
 #### Pip install
         pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
@@ -97,7 +97,7 @@ Output will be like this:
 # Launch GraphStorm Trainig without Fine-tuning BERT Models
 
 ```
-rm /tmp/ip_list.txt
+        rm /tmp/ip_list.txt
 
 touch /tmp/ip_list.txt
 echo 127.0.0.1 > /tmp/ip_list.txt
@@ -122,7 +122,7 @@ https://22-arita37-rankingbandits-n9l5syb0gmg.ws-us105.gitpod.io
 ```
 
 
-python3 -m graphstorm.run.gs_node_classification \
+python -m graphstorm.run.gs_node_classification \
         --workspace $WORKSPACE \
         --part-config $WORKSPACE/ztmp/acm_nc/acm.json \
         --ip-config /tmp/ip_list.txt \
@@ -159,7 +159,7 @@ python3 -m graphstorm.run.gs_node_classification \
         --node-feat-name paper:feat author:feat subject:feat \
         --lm-train-nodes 10
 
-        
+
 ```
 
 <img src="./train2_start.png" width = "600" height = "300" alt="1" align=center />
