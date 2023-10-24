@@ -26,6 +26,13 @@ Config = namedtuple('parameters',
                     ['input_dim',
                      'dropout','highway','nn_layers','num_class','multi_class','mid_dim'])
 
+def folder_check(folder_name):
+    if not os.path.exists(folder_name):
+    # Create the folder
+        os.mkdir(folder_name)
+        print(f"Folder '{folder_name}' created successfully.")
+    else:
+        print(f"Folder '{folder_name}' already exists.")
 
 def seed_everything(seed=1234):
     random.seed(seed)
@@ -41,7 +48,7 @@ def ml_loss_1(context,outputs):
     return F.binary_cross_entropy(outputs.view(-1),torch.tensor(true_labels).type(torch.float))
     
 def ml_loss_2(context,outputs):
-   return F.cross_entropy(outputs[1],torch.LongTensor(context.labels).cuda())
+   return F.cross_entropy(outputs[1],torch.LongTensor(context.labels))
 
 def train_model(args):
     print(args)
@@ -163,7 +170,6 @@ def train_model(args):
             step_in_epoch = 0
             
             for dataset in data_loader.chunked_data_reader():
-                print(dataset)
                 for step, contexts in tqdm(enumerate(BatchDataLoader(dataset, batch_size=args.train_batch,shuffle=True))):
                     try:
                         mcan_cb.train()
@@ -174,22 +180,21 @@ def train_model(args):
                 
                             q_a = torch.autograd.Variable(torch.from_numpy(context.features).type(torch.float))
                             outputs = mcan_cb(q_a)
-                            print('Output', outputs)
+                        
                             #if args.prt_inf and np.random.randint(0, 100) == 0:
                             #    prt = True
                             #else:
                             #    prt = False
 
-                            loss_t, reward_t = bandit.train(outputs, context,
-                                                        max_num_of_ans=args.max_num_of_ans,
-                                                        prt=False)
+                            loss_t, reward_t = bandit.train(outputs, context.features,
+                                                        max_num_of_ans=args.max_num_of_ans)
                             #print(str(loss_t)+' '+str(len(a_len)))
-                            print(loss_t, reward_t)
+                            
                             #    loss_t = loss_t.view(-1)
                             #true_labels = np.zeros(len(context.labels))
                             #true_labels[context.labels>0]=1.0
-                            #ml_loss = F.binary_cross_entropy(outputs.view(-1),torch.tensor(true_labels).type(torch.float).cuda())
-                            ml_loss = ml_func(context,outputs)
+                            #ml_loss = F.binary_cross_entropy(outputs.view(-1),torch.tensor(true_labels).type(torch.float))
+                            ml_loss = ml_func(context.features,outputs)
                             loss_e=((gamma*loss_t)+((1-gamma)*ml_loss))
                             loss_e.backward()
                             loss+=loss_e.item()
@@ -250,7 +255,7 @@ def main():
     seed_everything()
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--data_dir', type=str, default='MQ2007/MQ2007/Fold/pickle_data/')
+    parser.add_argument('--data_dir', type=str, default='MQ2007/Fold1/')
     parser.add_argument('--model_file', type=str, default='model/rank.model')
     parser.add_argument('--highway',type=str, default= 'True')
     parser.add_argument('--multi_class',action='store_true')
@@ -261,7 +266,7 @@ def main():
     parser.add_argument('--train_batch',type=int,default=4)
     parser.add_argument('--sampling_method',type=str,default = "herke")
     parser.add_argument('--max_num_of_ans',type=int,default=50)
-    parser.add_argument('--epochs_ext', type=int, default=10)
+    parser.add_argument('--epochs_ext', type=int, default=30)
     parser.add_argument('--load_ext', action='store_true')
     parser.add_argument('--input_dim', type=int, default=46)
     parser.add_argument('--mid_dim', type=int, default=46)
@@ -278,18 +283,19 @@ def main():
     parser.add_argument('--rl_loss_method', type=int, default=2,
                         help='1 for computing 1-log on positive advantages,'
                              '0 for not computing 1-log on all advantages')
-    parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--reward_type', type=int, default=1)
     parser.add_argument('--train_example_quota', type=int, default=1,
                         help='how many train example to train on: -1 means full train data')
     parser.add_argument('--prt_inf', action='store_true')
 
     args = parser.parse_args()
-
-    print(args.device)
-    torch.cuda.set_device(args.device)
-    print(args.highway)
-
+    # torch.cuda.set_device(args.device)
+    # Specify the directory path you want to create
+    folder_name1, folder_name2 = "model","log"
+    folder_check(folder_name1)
+    folder_check(folder_name2)
+    
     mcan_cb = train_model(args)
 
 
