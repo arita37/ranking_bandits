@@ -34,13 +34,16 @@ Then, configure SSH No-password login.
 ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
 cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 ```
+https://www.gitpod.io/docs/configure/workspaces/ports
 
-Test it with ```ssh 127.0.0.1```. If it shows ```connection refused```, maybe the ssh server is not installed or started.
+
+Test it with ssh 127.0.0.1  
+
+If it shows ```connection refused```, maybe the ssh server is not installed or started.
 
 # Fethc Graphstorm Souce Code
 
 ```
-cd $WORKSPACE
 
 git clone https://github.com/awslabs/graphstorm.git
 ```
