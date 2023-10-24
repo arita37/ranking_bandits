@@ -8,6 +8,50 @@ export PS1='\W$ '
 ## vim /home/gitpod/.bashrc
 
 
+### source init.sh
+
+echo "init"
+function init() {
+
+    echo " export PS1='\W$ ' " >> ~/.bashrc
+    echo ' export CONDA_DIR="/workspace/miniconda" '  >> ~/.bashrc
+    echo ' export PATH=$CONDA_DIR/bin:$PATH '         >> ~/.bashrc
+
+
+    export PS1='\W$ '
+    export CONDA_DIR="/workspace/miniconda"
+    export PATH=$CONDA_DIR/bin:$PATH 
+
+    # conda init bash
+
+    which conda && which pip && which python
+    python -c 'import json; print(json)'
+
+    tail -n 5 ~/.bashrc
+
+    echo "   vim /home/gitpod/.bashrc "
+
+    conda env list
+
+}
+
+
+echo "conda_install"
+function conda_install() {
+
+        export CONDA_DIR="/workspace/miniconda"
+        export PATH=$CONDA_DIR/bin:$PATH
+        echo $PATH
+        wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh -O miniconda.sh && \
+        chmod a+x miniconda.sh && \
+        bash ./miniconda.sh -b -p $CONDA_DIR && \
+        rm ./miniconda.sh
+
+        # conda init bash 
+        which python && which pip 
+}
+
+
 
 ##### Python install
 #   pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
