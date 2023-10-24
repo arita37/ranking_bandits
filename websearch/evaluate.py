@@ -70,7 +70,7 @@ def ext_model_eval(model,args,eval_data="test",trec_file="trecfile.txt"):
         for step, contexts in enumerate(data_preprocessing.BatchDataLoader(dataset, shuffle=False)):
             print("Done %2d chunck, %4d/%4d context\r" % (phase+1, step + 1, len(dataset)), end='')            
             context = contexts[0]
-            q_a = torch.autograd.Variable(torch.from_numpy(context.features).type(torch.float)).cuda()
+            q_a = torch.autograd.Variable(torch.from_numpy(context.features).type(torch.float))
             outputs = model(q_a)
             if isinstance(outputs,list):
                 outputs = outputs[0]
