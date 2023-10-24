@@ -33,6 +33,14 @@ Install
 
 
 
+Nodes - Users and Animes (two node types with different features = heterogeneous)
+Edges - If a user has rated a movie / the rating (edge weight)
+Node Features - The movie attributes and for the users, we have no explicit features so we have to figure something out later
+Labels - The rating for a movie (link prediction regression task)
+
+
+
+
 
 
 
