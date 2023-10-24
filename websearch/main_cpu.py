@@ -186,7 +186,7 @@ def train_model(args):
                             #else:
                             #    prt = False
 
-                            loss_t, reward_t = bandit.train(outputs, context.features,
+                            loss_t, reward_t = bandit.train(outputs, context,
                                                         max_num_of_ans=args.max_num_of_ans)
                             #print(str(loss_t)+' '+str(len(a_len)))
                             
@@ -194,7 +194,7 @@ def train_model(args):
                             #true_labels = np.zeros(len(context.labels))
                             #true_labels[context.labels>0]=1.0
                             #ml_loss = F.binary_cross_entropy(outputs.view(-1),torch.tensor(true_labels).type(torch.float))
-                            ml_loss = ml_func(context.features,outputs)
+                            ml_loss = ml_func(context,outputs)
                             loss_e=((gamma*loss_t)+((1-gamma)*ml_loss))
                             loss_e.backward()
                             loss+=loss_e.item()
@@ -240,6 +240,7 @@ def train_model(args):
                             print("saving model %s with eval_reward:" % model_save_name, eval_reward)
                             logging.debug("saving model"+str(model_save_name)+"with eval_reward:"+ str(eval_reward))
                             torch.save(mcan_cb, model_name)
+                            torch.save(mcan_cb, 'best_model')
                         print('epoch ' + str(epoch) + ' reward in validation: '
                             + str(eval_reward))
                         logging.debug('epoch ' + str(epoch) + ' reward in validation: '

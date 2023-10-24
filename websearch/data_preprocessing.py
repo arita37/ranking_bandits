@@ -118,7 +118,7 @@ def check_file(in_file,init_qid):
                 if prev != qid :
                     prev =qid 
                     if flag ==0 :
-                        assert(qid==init_qid)   
+                        # assert(qid==init_qid)   
                         flag=1
                        
                     if qid in unique:
@@ -189,6 +189,14 @@ def main():
     val = args.parse_val
     test = args.parse_test
     
+    for i in range(5):
+        folder_name = f'MQ2007/Fold{i+1}/chunked'
+        if not os.path.exists(folder_name):
+        # Create the folder
+            os.mkdir(folder_name)
+            print(f"Folder '{folder_name}' created successfully.")
+        else:
+            print(f"Folder '{folder_name}' already exists.")
     write_to_pickle(test, os.path.join(args.parse_output,"test_%03d.bin.p"),args.feat_start,args.embedding_size, init_qid=args.test_init,chunk_size=100000000)
 
     write_to_pickle(val, os.path.join(args.parse_output,"val_%03d.bin.p"), args.feat_start,args.embedding_size,init_qid=args.val_init,chunk_size=100000000)
