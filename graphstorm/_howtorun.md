@@ -6,8 +6,27 @@
    python -c 'import os; print(os)'
    pip3 list 
 
+export CONDA_DIR="/workspace/miniconda"
+export PATH=$CONDA_DIR/bin:$PATH
+echo $PATH
+wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh -O miniconda.sh && \
+    chmod a+x miniconda.sh && \
+    bash ./miniconda.sh -b -p $CONDA_DIR && \
+    rm ./miniconda.sh
+
+conda init bash 
+which python && which pip 
+
+
+echo $PATH
+
+conda create -n gstorm python==3.8.13
+conda activate gstorm
+which pip 
+
+
 #### Pip install
-        pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+      python -m  pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
         pip install dgl==1.0.4 -f https://data.dgl.ai/wheels-internal/repo.html
 
         ### Check
@@ -21,7 +40,6 @@
         cd $WORKSPACE/examples
 
         python3 acm_data.py --output-path $WORKSPACE/ztmp/acm_raw --output-type raw_w_text
-
 
 
 
@@ -66,6 +84,7 @@ git clone https://github.com/awslabs/graphstorm.git
 
 ```
 export WORKSPACE="$(pwd)/graphstorm"
+ls $WORKSPACE
 cd $WORKSPACE/examples
 
 python3 acm_data.py --output-path $WORKSPACE/ztmp/acm_raw --output-type raw_w_text
@@ -121,6 +140,7 @@ https://22-arita37-rankingbandits-n9l5syb0gmg.ws-us105.gitpod.io
 
 ```
 
+python -c 'import graphstorm; print(graphstorm)'
 
 python -m graphstorm.run.gs_node_classification \
         --workspace $WORKSPACE \
