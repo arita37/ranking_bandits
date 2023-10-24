@@ -86,8 +86,9 @@ def run(epoch=2, debug=1, dirout="ztmp/"):
 
 
     #animate(sage.labels,all_embeddings,sage.entity_mask)
+    topk = sage.query_neighbors([0,33],k=5)
+    
 
-    print(sage.query_neighbors([0,33],k=5))
 
     # sage.start_api()
 
