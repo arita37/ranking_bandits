@@ -48,7 +48,8 @@ def run(epoch=2, debug=1, dirout="ztmp/"):
     """
     
      python karateclub.py run --epoch 1  --debug 0
-    
+
+     python karateclub.py run --epoch 50  --debug 0    
 
     """
     g = nx.karate_club_graph()
@@ -87,7 +88,7 @@ def run(epoch=2, debug=1, dirout="ztmp/"):
 
     #animate(sage.labels,all_embeddings,sage.entity_mask)
     topk = sage.query_neighbors([0,33],k=5)
-    
+
 
 
     # sage.start_api()
