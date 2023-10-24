@@ -24,6 +24,13 @@ conda create -n gstorm python==3.8.13
 conda activate gstorm
 which pip 
 
+### SSH server install
+
+```
+sudo apt-get install openssh-server
+sudo /etc/init.d/ssh restart
+```
+
 
 #### Pip install
       python -m  pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
