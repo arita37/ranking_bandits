@@ -51,7 +51,7 @@ def return_answer_index(probs_numpy, probs_torch, sample_method="sample", max_nu
                 # herke's method
                 answer_index = []
                 epsilon = 0.1
-                mask = Variable(torch.ones(probs_torch.size()).cuda(), requires_grad=False)
+                mask = Variable(torch.ones(probs_torch.size()), requires_grad=False)
                 #mask = Variable(torch.ones(probs_torch.size()), requires_grad=False)
                 loss_list = []
                 for i in range(max_num_of_ans):
