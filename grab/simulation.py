@@ -340,8 +340,6 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         log('action Final\n', df[[ 'action_list' ]])
         pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
 
-
-
         log("###### Agent Save ###########") 
         diroutk = f"{dirout}/{loc_id}/agent"
         os_makedirs(diroutk)
