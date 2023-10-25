@@ -394,41 +394,36 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
 
 
 ###############################################################################
-PROBA = 1. / math.comb(7, 3)
-
-
-def is_convergent(df, factor):
-    return df.values.max()/df.values.sum()>factor*PROBA
-
-
-
 def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2, factor=1):
-    """ 
+    """ Check Tmin before convergence
 
-    python simulation.py run_convergence  --dirin ztmp/exp/ --nsimul 20
+        python simulation.py run_convergence  --dirin ztmp/exp/ --nsimul 20
+
 
     """
+    def is_convergent(df, factor):
+        return df.values.max()/df.values.sum()>factor
+
     results = []
     for _ in range(nsimul):
         #bash_command = "python simulation.py  run2  --K 3 --name simul   --T 20000     --dirout ztmp/exp/  --cfg config.yaml"
         #subprocess.run(bash_command, shell=True, stdout=subprocess.PIPE,
         #            stderr=subprocess.PIPE, text=True)
+        PROBA = 1. / math.comb(7, 3)
 
         run2(K=K, name=name, T=T, dirout= dirin)
-        flist = list(sorted(glob_glob( dirin + "/**/simul_metrics.csv")))
-        df_experiment = pd_read_file(flist[-1], sep="\t")
+        flist  = list(sorted(glob_glob( dirin + "/**/simul_metrics.csv")))
+        df_exp = pd_read_file(flist[-1], sep="\t")
         for ts in range(25, T):
-
-            df = df_experiment.loc[df_experiment['ts']<=ts].copy()
+            df = df_exp.loc[df_exp['ts']<=ts].copy()
             df["action_list"] = df["action_list"].apply(
                 lambda x: tuple(sorted([int(action) for action in x.split(',')])))
             df = df.groupby('action_list').count()['ts']
-            if is_convergent(df, factor=factor):
+            
+            if is_convergent(df, factor=factor*PROBA):
                 results.append(ts)
                 break
-
-
-        print(results)
+        log(results)
 
 
 ################################################################################
