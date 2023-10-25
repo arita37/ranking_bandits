@@ -8,13 +8,13 @@
 
    ### Version 2 : this the one we focus on
    export pyinstrument=0
-   python simulation_grab.py  run2  --cfg "config.yaml"   --T 20    --dirout ztmp/exp/ --K 3
+   python simulation.py  run2  --cfg "config.yaml"   --T 20    --dirout ztmp/exp/ --K 3
 
 
 
 
    #### Old not working. 
-      ####python simulation_grab.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
+      ####python simulation.py  run  --cfg "config.yaml"   --T 10    --dirout ztmp/exp/ --K 2
 
 
 ### Description:
@@ -72,7 +72,7 @@
 
     ### Today
     1) I need you understand the problem context 
-         and the simulation_grab.py  ---> Intuition is correct.
+         and the simulation.py  ---> Intuition is correct.
 
 
     ##### AFTER
@@ -167,13 +167,13 @@
 #### Expriments
 
 
-   python simulation_grab.py  run2  --K 3 --name simul   --T 100     --dirout ztmp/exp/  --cfg config.yaml 
+   python simulation.py  run2  --K 3 --name simul   --T 100     --dirout ztmp/exp/  --cfg config.yaml 
 
 
-   python simulation_grab.py  run2  --K 3 --name simul   --T 10000    --dirout ztmp/exp/  --cfg config.yaml 
+   python simulation.py  run2  --K 3 --name simul   --T 10000    --dirout ztmp/exp/  --cfg config.yaml 
 
 
-   python simulation_grab.py  run2  --K 3 --name simul5   --T 50000    --dirout ztmp/exp/  --cfg config.yaml 
+   python simulation.py  run2  --K 3 --name simul5   --T 50000    --dirout ztmp/exp/  --cfg config.yaml 
 
 
 
@@ -254,9 +254,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     Args:
     - cfg (str): config
 
-         python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
+         python simulation.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
 
-         python simulation_grab.py  run2  --cfg config.yaml --name 'simul'    --T 10000    --dirout ztmp/exp/ --K 2
+         python simulation.py  run2  --cfg config.yaml --name 'simul'    --T 10000    --dirout ztmp/exp/ --K 2
 
 
        itemid_list : Displayed item at time step ts
@@ -403,12 +403,12 @@ def find_convergence_index(lst):
 def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2):
     """ 
 
-    python simulation_grab.py run_convergence  --dirin ztmp/exp/ --nsimul 20
+    python simulation.py run_convergence  --dirin ztmp/exp/ --nsimul 20
 
     """
     results = []
     for _ in range(nsimul):
-        #bash_command = "python simulation_grab.py  run2  --K 3 --name simul   --T 20000     --dirout ztmp/exp/  --cfg config.yaml"
+        #bash_command = "python simulation.py  run2  --K 3 --name simul   --T 20000     --dirout ztmp/exp/  --cfg config.yaml"
         #subprocess.run(bash_command, shell=True, stdout=subprocess.PIPE,
         #            stderr=subprocess.PIPE, text=True)
 
