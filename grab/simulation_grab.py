@@ -179,13 +179,13 @@
 
 
 """
-import pandas as pd, numpy as np, os,json
+import pandas as pd, numpy as np, os,json, subprocess
 import fire, pyinstrument
 from scipy.stats import kendalltau
 from collections import defaultdict
 from box import Box
 from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
-date_now, load_function_uri)
+date_now, load_function_uri, glob_glob)
 
 
 from bandits_to_rank.opponents.grab import GRAB
@@ -389,6 +389,40 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
         df      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
         train_grab2(cfg, name, df, K=K, dirout=dirouti)
+
+
+
+###############################################################################
+def find_convergence_index(lst):
+    for i in range(len(lst)):
+        if len(set(lst[i:])) == 1:
+            return i
+    return i
+
+
+def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2):
+    """ 
+
+    python simulation_grab.py run_convergence  --dirin ztmp/exp/ --nsimul 20
+
+    """
+    results = []
+    for _ in range(nsimul):
+        #bash_command = "python simulation_grab.py  run2  --K 3 --name simul   --T 20000     --dirout ztmp/exp/  --cfg config.yaml"
+        #subprocess.run(bash_command, shell=True, stdout=subprocess.PIPE,
+        #            stderr=subprocess.PIPE, text=True)
+
+        run2(K=K, name=name, T=T, dirout= dirin)
+        flist = list(sorted(glob_glob( dirin + "/**/simul_metrics.csv")))
+        action_lists = pd_read_file(flist[-1], sep="\t")["action_list"]
+
+        action_lists = action_lists.apply(lambda x: [int(action) for action in x.split(',')])
+        action_lists = action_lists.apply(lambda x: sorted(x))
+        action_lists = action_lists.apply(lambda x: tuple(x)).values
+        res = find_convergence_index(action_lists)
+        results.append(res)
+
+    print(results)
 
 
 ################################################################################
