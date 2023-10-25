@@ -184,6 +184,7 @@ import fire, pyinstrument
 from scipy.stats import kendalltau
 from collections import defaultdict
 from box import Box
+import math
 from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
 date_now, load_function_uri, glob_glob)
 
@@ -393,14 +394,15 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
 
 
 ###############################################################################
-def find_convergence_index(lst):
-    for i in range(len(lst)):
-        if len(set(lst[i:])) == 1:
-            return i
-    return i
+PROBA = 1. / math.comb(7, 3)
 
 
-def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2):
+def is_convergent(df, factor):
+    return df.values.max()/df.values.sum()>factor*PROBA
+
+
+
+def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2, factor=1):
     """ 
 
     python simulation.py run_convergence  --dirin ztmp/exp/ --nsimul 20
@@ -414,15 +416,19 @@ def run_convergence(dirin= "ztmp/exp", T=100, K=3, name='simul', nsimul=2):
 
         run2(K=K, name=name, T=T, dirout= dirin)
         flist = list(sorted(glob_glob( dirin + "/**/simul_metrics.csv")))
-        action_lists = pd_read_file(flist[-1], sep="\t")["action_list"]
+        df_experiment = pd_read_file(flist[-1], sep="\t")
+        for ts in range(25, T):
 
-        action_lists = action_lists.apply(lambda x: [int(action) for action in x.split(',')])
-        action_lists = action_lists.apply(lambda x: sorted(x))
-        action_lists = action_lists.apply(lambda x: tuple(x)).values
-        res = find_convergence_index(action_lists)
-        results.append(res)
+            df = df_experiment.loc[df_experiment['ts']<=ts].copy()
+            df["action_list"] = df["action_list"].apply(
+                lambda x: tuple(sorted([int(action) for action in x.split(',')])))
+            df = df.groupby('action_list').count()['ts']
+            if is_convergent(df, factor=factor):
+                results.append(ts)
+                break
 
-    print(results)
+
+        print(results)
 
 
 ################################################################################
