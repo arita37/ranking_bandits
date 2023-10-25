@@ -33,7 +33,7 @@ def main():
         results_path, "sim0\\0\\metrics\\simul_metrics.csv")
     df_experiment = pd.read_csv(results_path, sep="\t")
 
-    for ts in range(40, T):
+    for ts in range(25, T):
 
         df = df_experiment[df_experiment['ts']<=ts]
         df["action_list"] = df["action_list"].apply(
