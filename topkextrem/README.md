@@ -30,12 +30,12 @@ pybind11_add_module(core ${SOURCES} "${SOURCE_DIR}/corelib/bindings.cpp")
 
 ################################################################################
 gitpod /workspace/ranking_bandits (abndrank) $
-cd topkbandit
-source ../init.sh
-pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
-pip3 install gdown
-/workspace/.pyenv_mirror/fakeroot/versions/3.8.13/bin/python3.8 -m pip install --upgrade pip
-pip3 install gdown
+    cd topkbandit
+    source ../init.sh
+    pyenv install 3.8.13 && pyenv global 3.8.13 && python --version
+    pip3 install gdown
+    /workspace/.pyenv_mirror/fakeroot/versions/3.8.13/bin/python3.8 -m pip install --upgrade pip
+    pip3 install gdown
 
 
 
