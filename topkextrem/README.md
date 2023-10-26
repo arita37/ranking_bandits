@@ -9,6 +9,25 @@ source ../init.sh
 
 
 
+
+###############################################################################
+#### Create CMakeLists.txt
+cmake_minimum_required(VERSION 2.8.12)
+project(xcb)
+# Set source directory
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(SOURCE_DIR "src/xcb")
+list(APPEND CMAKE_PREFIX_PATH "/workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/share/cmake/pybind11")
+find_package(pybind11 REQUIRED)
+# Tell CMake that headers are also in SOURCE_DIR
+include_directories(${SOURCE_DIR}/corelib)
+set(SOURCES "${SOURCE_DIR}/corelib/toy.cpp" "${SOURCE_DIR}/corelib/xcb_inference.cpp")
+include_directories(lib/eigen)
+pybind11_add_module(core ${SOURCES} "${SOURCE_DIR}/corelib/bindings.cpp")
+
+
+
 ################################################################################
 gitpod /workspace/ranking_bandits (abndrank) $
 cd topkbandit
@@ -20,60 +39,59 @@ pip3 install gdown
 
 
 
-pip3 install -r reqs.txt
-export PYTHONPATH="$(pwd)"
+################################################################################
+##### Pip install. #############################################################
+    pip3 install -r reqs.txt
+    export PYTHONPATH="$(pwd)"
 
-pip install pybind11
-python -c "import pybind11; print(pybind11.get_cmake_dir())"
-# /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/share/cmake/pybind11
+    pip install pybind11
+    python -c "import pybind11; print(pybind11.get_cmake_dir())"
+    # /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/share/cmake/pybind11
 
-python -c "import pybind11; print(pybind11)"
-# /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/
+    python -c "import pybind11; print(pybind11)"
+    # /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/
 
-ln -s lib/pybind11       /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11
+    ln -s lib/pybind11       /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11
 
-
-
-##### Install package
-# cd ..
 
 #### Build eigen
-cmake eigen -DINCLUDE_INSTALL_DIR=/usr/local/include/ 
-sudo make install
+    cmake eigen -DINCLUDE_INSTALL_DIR=/usr/local/include/ 
+    sudo make install
 
-###
-pip install -e .
+###. Install 
+    pip install -e .
+
+     python -c 'import xcb.xfalcon.inference       '
+
+
+    # Preparing metadata (setup.py) ... done
+    # Installing collected packages: eXtremeContextualBandits
+    # Running setup.py develop for eXtremeContextualBandits
+    # Successfully installed eXtremeContextualBandits-1.0
+
+
+
+ls  /workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/share/cmake/pybind11/
+
+
+##### Tests ##########################################
+        pip install ipython
+
+        import os
+        from xcb.eval import simulator as simulator
+        from xcb.xfalcon.inference import XLinearCBI
+        from xcb.xfalcon.train import XFalconTrainer
+        import scipy.sparse as smat
+        import numpy as np
+        from xcb.utils.logging import setup_logging_config
+        import scipy as sp
+        import logging
+        import warnings
 
 
 
 
 ###############################################################################
-#### Create CMakeLists.txt
-cmake_minimum_required(VERSION 2.8.12)
-project(xcb)
-# Set source directory
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(SOURCE_DIR "src/xcb")
-list(APPEND CMAKE_PREFIX_PATH "/workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11")
-find_package(pybind11 REQUIRED)
-# Tell CMake that headers are also in SOURCE_DIR
-include_directories(${SOURCE_DIR}/corelib)
-set(SOURCES "${SOURCE_DIR}/corelib/toy.cpp" "${SOURCE_DIR}/corelib/xcb_inference.cpp")
-include_directories(lib/eigen)
-pybind11_add_module(core ${SOURCES} "${SOURCE_DIR}/corelib/bindings.cpp")
-
-
-
-
-###############################################################################
-
-
-
-
-
-
-
 tasks:
   - init:  
   
@@ -110,27 +128,24 @@ tasks:
 
 
 ##################
-https://tinyurl.com/4m7eczdv
+    https://tinyurl.com/4m7eczdv
+
+    mkdir -p ztmp
+
+    EURLex-4K. 2000 dim
+    gdown --fuzzy https://drive.google.com/file/d/0B3lPMIHmG6vGU0VTR1pCejFpWjg/view?usp=sharing&resourcekey=0-SurjZ4z_5Tr38jENzf2Iwg   ztmp/
+
+
+    unzip ztmp/Eurlex.zip
+
+    https://drive.google.com/file/d/1b3mWgaKIAmc9Ae3E0QrokiIFA9Qj1K9r
 
 
 
 
-mkdir -p ztmp
-
-EURLex-4K. 2000 dim
-gdown --fuzzy https://drive.google.com/file/d/0B3lPMIHmG6vGU0VTR1pCejFpWjg/view?usp=sharing&resourcekey=0-SurjZ4z_5Tr38jENzf2Iwg   ztmp/
-
-
-unzip ztmp/Eurlex.zip
-
-https://drive.google.com/file/d/1b3mWgaKIAmc9Ae3E0QrokiIFA9Qj1K9r
-
-
-
-
-dirin='ztmp/Eurlex/'
-dirout='ztmp/exp/v1/'
-python xcb.utils.convert2sparse -i $dirin/eurlex_train.txt -o $dirout  --normalize
+    dirin='ztmp/Eurlex/'
+    dirout='ztmp/exp/v1/'
+    python xcb.utils.convert2sparse -i $dirin/eurlex_train.txt -o $dirout  --normalize
 
 
 ```
@@ -202,8 +217,8 @@ beam_size = 10
 
 Xtrain = smat.load_npz("path/train/X.npz")
 Ytrain = smat.load_npz("path/train/Y.npz")
-Xtest = smat.load_npz("path/test/X.npz")
-Ytest = smat.load_npz("path/test/Y.npz")
+Xtest  = smat.load_npz("path/test/X.npz")
+Ytest  = smat.load_npz("path/test/Y.npz")
 tei = np.random.permutation(np.arange(Xtest.shape[0]))
 tri = np.random.choice(Xtrain.shape[0], Xtrain.shape[0])
 # Size of initialization supervised set used for training tree and routing functions

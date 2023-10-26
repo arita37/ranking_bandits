@@ -4,7 +4,7 @@ project(xcb)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SOURCE_DIR "src/xcb")
-list(APPEND CMAKE_PREFIX_PATH "/workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11")
+list(APPEND CMAKE_PREFIX_PATH "/workspace/miniconda/envs/xtrem/lib/python3.8/site-packages/pybind11/share/cmake/pybind11")
 find_package(pybind11 REQUIRED)
 # Tell CMake that headers are also in SOURCE_DIR
 include_directories(${SOURCE_DIR}/corelib)

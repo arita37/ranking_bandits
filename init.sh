@@ -25,10 +25,8 @@ function init() {
     # conda init bash
 
     which conda && which pip && which python
-    python -c 'import json; print(json)'
-
-    tail -n 5 ~/.bashrc
-
+    #python -c 'import json; print(json)'
+    tail -n 3 ~/.bashrc
     echo "   vim /home/gitpod/.bashrc "
 
     conda env list
