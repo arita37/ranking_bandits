@@ -38,20 +38,21 @@ function init() {
 
 echo "conda_install"
 function conda_install() {
+    cd /workspaces/
 
-        export CONDA_DIR="/workspace/miniconda"
-        export PATH=$CONDA_DIR/bin:$PATH
-        echo $PATH
-        wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh -O miniconda.sh && \
-        chmod a+x miniconda.sh && \
-        bash ./miniconda.sh -b -p -y $CONDA_DIR && \
-        rm ./miniconda.sh
+    export CONDA_DIR="/workspace/miniconda"
+    export PATH=$CONDA_DIR/bin:$PATH
+    echo $PATH
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh -O miniconda.sh && \
+    chmod a+x miniconda.sh && \
+    bash ./miniconda.sh -b -p  $CONDA_DIR && \
+    rm ./miniconda.sh
 
-        echo "### remove pyenv Default"
-        pyenv global system  
+    echo "### remove pyenv Default"
+    pyenv global system  
 
-        # conda init bash 
-        which python && which pip 
+    # conda init bash 
+    which conda && which python && which pip 
 
 }
 
