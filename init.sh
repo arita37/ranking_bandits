@@ -35,6 +35,8 @@ function init() {
 
 }
 
+init
+
 
 echo "conda_install"
 function conda_install() {
@@ -56,6 +58,8 @@ function conda_install() {
 
 }
 
+
+## conda create -n p38extreme python==3.8.13
 
 
 function killport() {
