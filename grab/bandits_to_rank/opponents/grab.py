@@ -168,9 +168,9 @@ class GRAB:
         # self.Xhisto 
 
         ### Case real time partial fit
-        X = pd.DataFrame(past context )
-        y = rewards 
-        self.model_reward.fit_partial(X, y )
+        # X = pd.DataFrame(past context )
+        # y = rewards 
+        # self.model_reward.fit_partial(X, y )
 
         ### or batch past data fit 
         if mode='batch_fit':
