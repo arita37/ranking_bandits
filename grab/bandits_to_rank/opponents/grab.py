@@ -175,7 +175,7 @@ class GRAB:
         ### or batch past data fit 
         if mode='batch_fit':
            y = rewards  
-           self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(past context ) )
+           self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
            self.yhisto = pd.concat((self.yhisto, y)) 
            self.model_reward.fit(self.Xhisto, yhisto )
 
