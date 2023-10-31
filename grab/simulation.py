@@ -303,6 +303,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         ### Metrics
         dd = {}
         log("\n##### Start Simul  ")
+        regret_sum = 0
+        regret_bad_cum = 0
         for t in range(0, len(dfg)):
 
             # Return One action :  1 full list of item_id  to be Displayed
@@ -315,7 +317,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             rwd_best             = np.sum( itemid_clk )   ### All Clicks               
             rwd_actual, rwd_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
             regret               = rwd_best - rwd_actual   #### Max Value  K items
-
+            regret_bad_cum += len(itemid_imp)  # Update regret_bad_cum
+            regret_sum += regret    #update regret sum 
+            regret_ratio = regret_sum / regret_bad_cum  #regret ratio calculation
 
             agent.update(action_list, rwd_list)
 
@@ -325,14 +329,15 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             dd = metrics_add(dd, 'rwd_list',      rwd_list    )
             dd = metrics_add(dd, 'regret',        regret    )
             dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
-
+            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )   #add regret ratio
         ### Exp Params 
         log(cc)
         json_save(cc, f"{dirout}/{loc_id}/params.json")    
 
         log("###### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
-        # log(df[[ 'reward_best' ,  'reward_actual', 'regret_cum', 'regret_bad_cum' ]])
+        print(df)
+        log(df[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
