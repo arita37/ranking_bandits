@@ -4,6 +4,10 @@
 
  GRAB RL algo
 
+  Explain reward training in contextual bandit algorithm.
+
+
+
    L items : Fixed (nb_arms)
 
    get_Action --> List of K items out of L items
