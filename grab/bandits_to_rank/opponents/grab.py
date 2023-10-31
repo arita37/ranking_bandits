@@ -163,6 +163,8 @@ class GRAB:
     def update2(self, propositions, rewards, context):
         """ GRAB model parameters are updated HERE
 
+             return np.random.random()
+
 
         """
 
