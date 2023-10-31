@@ -1,6 +1,64 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-""""""
+"""
+
+ GRAB RL algo
+
+   L items : Fixed (nb_arms)
+
+   get_Action --> List of K items out of L items
+
+
+   ### Current Algo:
+      reward (list of  1 or 0) --> Update the parameters of Grab
+
+           update(self, propositions, rewards):
+
+
+  ### Next Milestone: Contextual bandit (  Q-learning )
+      Reward = F( context )     
+
+      context = (time, hour day, location)id,  ...)
+
+      A) need to create a model (ie Random Forest or Logistic Regression)
+             Model2(Xinput) --> predict_Reward = Reward_estimate
+
+      B) Will use this Reward_estimate INSIDE the GRAB Algo.
+
+     WHy ? 
+
+         impression, Click, 
+           1 location:   Bandit return list of K items out of L items.
+
+         Suppose  23 locations ????   
+            Solution 1 : 
+               23 Bandit RL algo Independant:
+                  Grab1, Grab2, .....
+               --> Complicated.
+
+
+         Instea of having 23 Grab models.....
+          1 Grab model BUT
+             Reward = F( context=  [location_id, time, ....] )
+
+             get_Action(context=  [location_id, time, ....] )
+
+                 Differnt action output per location_id (ie different context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 from random import shuffle
 from math import log
 from bandits_to_rank.tools.tools import swap_full, start_up, newton
@@ -29,8 +87,8 @@ class GRAB:
             a permutation in order to explore each item at each position at least once
 
         """
-        self.nb_arms = nb_arms
-        self.nb_positions = nb_positions
+        self.nb_arms = nb_arms             ### Total number of item: L
+        self.nb_positions = nb_positions   ### return action list size : K < L items
         self.list_transpositions = [(0, 0)]
         self.gamma = gamma
         self.forced_initiation = forced_initiation
@@ -75,12 +133,18 @@ class GRAB:
         return proposition, 0
 
     def update(self, propositions, rewards):
+        """ GRAB model parameters are updated HERE
+
+
+        """
         self.running_t += 1
         # update statistics
         self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
         for k in range(self.nb_positions):
             item_k = propositions[k]
             kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
+
+            ### we use reward here
             kappa_theta, n = kappa_theta + (rewards[k] - kappa_theta) / (n + 1), n + 1
             start = start_up(kappa_theta, self.certitude, n)
             upper_bound = newton(kappa_theta, self.certitude, n, start)
@@ -90,6 +154,55 @@ class GRAB:
         # update the leader L(n) (in the neighborhood of previous leader)
         self.update_leader()
         self.update_transition()
+
+
+    def update2(self, propositions, rewards, context):
+        """ GRAB model parameters are updated HERE
+
+
+        """
+
+        #### Predict rewards2
+        ### init 
+        # self.model_reward = RandomForest()
+        # self.Xhisto 
+
+        ### Case real time partial fit
+        X = pd.DataFrame(past context )
+        y = rewards 
+        self.model_reward.fit_partial(X, y )
+
+        ### or batch past data fit 
+        if mode='batch_fit':
+           y = rewards  
+           self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(past context ) )
+           self.yhisto = pd.concat((self.yhisto, y)) 
+           self.model_reward.fit(self.Xhisto, yhisto )
+
+        #### List of n_arms float  
+        rewards2 = self.model_reward.predict(context)
+
+
+
+        self.running_t += 1
+        # update statistics
+        self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
+        for k in range(self.nb_positions):
+            item_k = propositions[k]
+            kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
+
+            ### we use reward here
+            kappa_theta, n = kappa_theta + (rewards2[k] - kappa_theta) / (n + 1), n + 1
+            start = start_up(kappa_theta, self.certitude, n)
+            upper_bound = newton(kappa_theta, self.certitude, n, start)
+            self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
+            self.upper_bound_kappa_theta[item_k, k] = upper_bound
+
+        # update the leader L(n) (in the neighborhood of previous leader)
+        self.update_leader()
+        self.update_transition()
+
+
 
     def update_leader(self):
         """
