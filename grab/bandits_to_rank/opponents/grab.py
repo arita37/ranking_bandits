@@ -71,6 +71,15 @@ from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
 import os
 import pickle
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import joblib  # Import joblib
+
+
+
+import pandas as pd 
 
 class GRAB:
     """
@@ -96,7 +105,7 @@ class GRAB:
         self.list_transpositions = [(0, 0)]
         self.gamma = gamma
         self.forced_initiation = forced_initiation
-
+        self.reward_model = RandomForestClassifier(n_estimators=100, random_state=0)
         self.certitude = log(T)
         self.clean()
 
@@ -141,7 +150,9 @@ class GRAB:
 
 
         """
+        
         self.running_t += 1
+
         # update statistics
         self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
         for k in range(self.nb_positions):
@@ -150,6 +161,7 @@ class GRAB:
 
             ### we use reward here
             kappa_theta, n = kappa_theta + (rewards[k] - kappa_theta) / (n + 1), n + 1
+            print(kappa_theta)
             start = start_up(kappa_theta, self.certitude, n)
             upper_bound = newton(kappa_theta, self.certitude, n, start)
             self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
@@ -160,54 +172,84 @@ class GRAB:
         self.update_transition()
 
 
-    def update2(self, propositions, rewards, context):
+    def update2(self, context, actions, true_rewards, status):
         """ GRAB model parameters are updated HERE
 
              return np.random.random()
 
 
         """
-
+        # print(context, actions, true_rewards, status)
+        
         #### Predict rewards2
         ### init 
         # self.model_reward = RandomForest()
         # self.Xhisto 
+        ### or batch past data fit s
+        # if mode='batch_fit':
+        #    y = rewards  
+        #    self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
+        #    self.yhisto = pd.concat((self.yhisto, y)) 
+        #    self.model_reward.fit(self.Xhisto, yhisto )
+
+        # #### List of n_arms float  
+        # rewards2 = self.model_reward.predict(context)
 
         ### Case real time partial fit
-        # X = pd.DataFrame(past context )
-        # y = rewards 
-        # self.model_reward.fit_partial(X, y )
 
-        ### or batch past data fit 
-        if mode='batch_fit':
-           y = rewards  
-           self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
-           self.yhisto = pd.concat((self.yhisto, y)) 
-           self.model_reward.fit(self.Xhisto, yhisto )
+        model_save_path = 'random_forest_model.joblib'
+        
 
-        #### List of n_arms float  
-        rewards2 = self.model_reward.predict(context)
+        
+        if status == True:
+            #Training reward model on the batch size 
+            X = context
+            y = true_rewards
+            X_train, X_val, actions_train, actions_val, rewards_train, rewards_val = train_test_split(X, actions, y, test_size=0.2)
+            self.reward_model.fit(np.column_stack((X_train, actions_train)), rewards_train)
+            predicted_rewards = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
 
+            # Evaluate the model
+            accuracy = accuracy_score(rewards_val[0], predicted_rewards)
+            precision = precision_score(rewards_val[0], predicted_rewards)
+            recall = recall_score(rewards_val[0], predicted_rewards)
+            f1 = f1_score(rewards_val[0], predicted_rewards)
 
+            print(f'Accuracy: {accuracy}')
+            print(f'Precision: {precision}')
+            print(f'Recall: {recall}')
+            print(f'F1-score: {f1}')
+            
+            joblib.dump(self.reward_model, model_save_path)
+        
+        if status == False:
+            #Using trained model for prediction 
+            if os.path.exists(model_save_path):
+            # Save the trained model to a file
+                self.reward_model = joblib.load(model_save_path)
+                print(f"Model loaded from existing ")
+                input_features = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
+                predicted_rewards = self.reward_model.predict(input_features)[0].tolist()
+            else:
+                print(f"model is not found training")
+                predicted_rewards = true_rewards
+            
+            # self.running_t += 1
+            # update statistics
+            self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
+            for k in range(self.nb_positions):
+                item_k = actions[k]
+                kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
+                ### we use reward here
+                kappa_theta, n = kappa_theta + (predicted_rewards[k] - kappa_theta) / (n + 1), n + 1
+                start = start_up(kappa_theta, self.certitude, n)
+                upper_bound = newton(kappa_theta, self.certitude, n, start)
+                self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
+                self.upper_bound_kappa_theta[item_k, k] = upper_bound
 
-        self.running_t += 1
-        # update statistics
-        self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
-        for k in range(self.nb_positions):
-            item_k = propositions[k]
-            kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
-
-            ### we use reward here
-            kappa_theta, n = kappa_theta + (rewards2[k] - kappa_theta) / (n + 1), n + 1
-            start = start_up(kappa_theta, self.certitude, n)
-            upper_bound = newton(kappa_theta, self.certitude, n, start)
-            self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
-            self.upper_bound_kappa_theta[item_k, k] = upper_bound
-
-        # update the leader L(n) (in the neighborhood of previous leader)
-        self.update_leader()
-        self.update_transition()
-
+            # update the leader L(n) (in the neighborhood of previous leader)
+            self.update_leader()
+            self.update_transition()
 
 
     def update_leader(self):
@@ -296,3 +338,5 @@ class GRAB:
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+#   python simulation.py  run2  --K 3 --name simul   --T 100     --dirout ztmp/exp/  --cfg config.yaml 
