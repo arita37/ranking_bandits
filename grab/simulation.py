@@ -264,7 +264,8 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
        itemid_clk :  1 (click) or 0 for items in Displayed items
  
 
-    """    
+    """ 
+    BATCH_SIZE = 4   
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
 
@@ -278,8 +279,9 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     ### Agent Setup
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
+
     agents=[]
-    
+    action_lst, reward_lst, context = [], [], []
     #### for each location: a New bandit optimizer
     for loc_id in range(cc.loc_id_all):
 
@@ -320,9 +322,14 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             regret_bad_cum += len(itemid_imp)  # Update regret_bad_cum
             regret_sum += regret    #update regret sum 
             regret_ratio = regret_sum / regret_bad_cum  #regret ratio calculation
-
-            agent.update(action_list, rwd_list)
-
+            context.append(loc_id)
+            action_lst.append(action_list)
+            reward_lst.append(rwd_list)
+            # agent.update(action_list, rwd_list)
+            agent.update2([loc_id], action_list, rwd_list, False)
+            if len(action_lst) % BATCH_SIZE == 0:
+                agent.update2(context, action_lst, reward_lst, True)
+                # print(action_lst, reward_lst)
             dd = metrics_add(dd, 'action_list',   action_list)
             dd = metrics_add(dd, 'rwd_best',      rwd_best    )
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
@@ -336,7 +343,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
         log("###### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
-        print(df)
+        
         log(df[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
@@ -549,6 +556,7 @@ def zz_train_grab(cfg, df, K, dirout="ztmp/"):
     T          = len(df)
 
     agents=[]
+    action_lst, reward_lst = [], []
     #### for each location we simulate the bandit optimizer (ie list of items)
     for loc_id in range(loc_id_all):
         dfi   = df[df['loc_id'] == loc_id ]
@@ -577,9 +585,13 @@ def zz_train_grab(cfg, df, K, dirout="ztmp/"):
                 cumulative_reward += sum(reward_list[action_list[i]] for i in range(len(action_list)))
                 regret[t] = cumulative_expected_reward-cumulative_reward
 
-
-            agent.update(action_list, reward_list)
-
+            action_lst.append(action_list)
+            reward_lst.append(reward_list)
+            
+            if len(action_lst) % 2 == 0:
+                agent.update2(action_lst, reward_lst)
+        # agent.update( action_lst, reward_lst)
+        print(action_lst, reward_lst)
         diroutk = f"{dirout}/agent_{loc_id}/"
         os_makedirs(diroutk)
         agent.save(diroutk)
