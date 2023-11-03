@@ -113,8 +113,7 @@ class GRAB:
 
         # self.reward_model = joblib.load(model_save_path)
         self.reward_model      = RandomForestClassifier(n_estimators=10, random_state=0)
-        from utilmy import os_makedirs
-        os_makedirs(self.reward_model_path)
+
 
 
     def clean(self):
@@ -223,7 +222,9 @@ class GRAB:
             #print(f'Accuracy: {accuracy}')
             #print(f'Precision: {precision}')
             #print(f'Recall: {recall}')
-            print(f'F1-score: {f1}')            
+            print(f'F1-score: {f1}')      
+            from utilmy import os_makedirs
+            os_makedirs(self.reward_model_path)                  
             joblib.dump(self.reward_model, self.reward_model_path)
         
 
