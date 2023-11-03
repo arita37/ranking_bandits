@@ -105,9 +105,17 @@ class GRAB:
         self.list_transpositions = [(0, 0)]
         self.gamma = gamma
         self.forced_initiation = forced_initiation
-        self.reward_model = RandomForestClassifier(n_estimators=100, random_state=0)
         self.certitude = log(T)
         self.clean()
+
+        ####reward model.
+        #self.reward_model_path = 'ztmp/random_forest_model.joblib'
+
+        # self.reward_model = joblib.load(model_save_path)
+        self.reward_model      = RandomForestClassifier(n_estimators=10, random_state=0)
+        from utilmy import os_makedirs
+        os_makedirs(self.reward_model_path)
+
 
     def clean(self):
         """ Clean log data. /To be ran before playing a new game. """
@@ -172,36 +180,33 @@ class GRAB:
         self.update_transition()
 
 
-    def update2(self, context, actions, true_rewards, status):
+    def update2(self, context, actions, true_rewards, mode:str):
         """ GRAB model parameters are updated HERE
 
-             return np.random.random()
+            + reward learning
 
+                # print(context, actions, true_rewards, status)
+                
+                #### Predict rewards2
+                ### init 
+                # self.model_reward = RandomForest()
+                # self.Xhisto 
+                ### or batch past data fit s
+                # if mode='batch_fit':
+                #    y = rewards  
+                #    self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
+                #    self.yhisto = pd.concat((self.yhisto, y)) 
+                #    self.model_reward.fit(self.Xhisto, yhisto )
+
+                # #### List of n_arms float  
+                # rewards2 = self.model_reward.predict(context)
+
+                ### Case real time partial fit
 
         """
-        # print(context, actions, true_rewards, status)
+       #  model_save_path = 'random_forest_model.joblib'
         
-        #### Predict rewards2
-        ### init 
-        # self.model_reward = RandomForest()
-        # self.Xhisto 
-        ### or batch past data fit s
-        # if mode='batch_fit':
-        #    y = rewards  
-        #    self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
-        #    self.yhisto = pd.concat((self.yhisto, y)) 
-        #    self.model_reward.fit(self.Xhisto, yhisto )
-
-        # #### List of n_arms float  
-        # rewards2 = self.model_reward.predict(context)
-
-        ### Case real time partial fit
-
-        model_save_path = 'random_forest_model.joblib'
-        
-
-        
-        if status == True:
+        if mode == 'train':
             #Training reward model on the batch size 
             X = context
             y = true_rewards
@@ -210,32 +215,32 @@ class GRAB:
             predicted_rewards = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
 
             # Evaluate the model
-            accuracy = accuracy_score(rewards_val[0], predicted_rewards)
-            precision = precision_score(rewards_val[0], predicted_rewards)
-            recall = recall_score(rewards_val[0], predicted_rewards)
+            #accuracy = accuracy_score(rewards_val[0], predicted_rewards)
+            #precision = precision_score(rewards_val[0], predicted_rewards)
+            #recall = recall_score(rewards_val[0], predicted_rewards)
             f1 = f1_score(rewards_val[0], predicted_rewards)
 
-            print(f'Accuracy: {accuracy}')
-            print(f'Precision: {precision}')
-            print(f'Recall: {recall}')
-            print(f'F1-score: {f1}')
-            
-            joblib.dump(self.reward_model, model_save_path)
+            #print(f'Accuracy: {accuracy}')
+            #print(f'Precision: {precision}')
+            #print(f'Recall: {recall}')
+            print(f'F1-score: {f1}')            
+            joblib.dump(self.reward_model, self.reward_model_path)
         
-        if status == False:
+
+        elif mode == 'predict':
             #Using trained model for prediction 
-            if os.path.exists(model_save_path):
-            # Save the trained model to a file
-                self.reward_model = joblib.load(model_save_path)
-                print(f"Model loaded from existing ")
-                input_features = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
+            #if os.path.exists(model_save_path):
+            try:    
+                input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
                 predicted_rewards = self.reward_model.predict(input_features)[0].tolist()
-            else:
-                print(f"model is not found training")
+
+            except Exception as e:
+                print(f"model failed", e)
                 predicted_rewards = true_rewards
             
+
             # self.running_t += 1
-            # update statistics
+            ############# update GRAB model :ranking list ##########################################
             self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
             for k in range(self.nb_positions):
                 item_k = actions[k]
@@ -297,7 +302,7 @@ class GRAB:
     def save(self, dirout):
         os.makedirs(dirout, exist_ok=True)
 
-        model_params = {
+        mdict = {
             'nb_arms': self.nb_arms,
             'nb_positions': self.nb_positions,
             'list_transpositions': self.list_transpositions,
@@ -310,33 +315,50 @@ class GRAB:
             'leader_count': self.leader_count,
             'running_t': self.running_t,
             'extended_leader': self.extended_leader,
+
+            'reward_model_path': self.reward_model_path 
         }
 
         with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
-            pickle.dump(model_params, file)
+            pickle.dump(mdict, file)
 
-    def load(self, dirout):
-        try:
-            with open(os.path.join(dirout, "model_grab.pkl"), 'rb') as file:
-                model_params = pickle.load(file)
 
-            self.nb_arms = model_params['nb_arms']
-            self.nb_positions = model_params['nb_positions']
-            self.list_transpositions = model_params['list_transpositions']
-            self.gamma = model_params['gamma']
-            self.forced_initiation = model_params['forced_initiation']
-            self.certitude = model_params['certitude']
-            self.kappa_thetas = model_params['kappa_thetas']
-            self.times_kappa_theta = model_params['times_kappa_theta']
-            self.upper_bound_kappa_theta = model_params['upper_bound_kappa_theta']
-            self.leader_count = model_params['leader_count']
-            self.running_t = model_params['running_t']
-            self.extended_leader = model_params['extended_leader']
+    def load(self, dirin):
 
-        except FileNotFoundError:
-            print(f"File not found.")
+            with open(os.path.join(dirin, "model_grab.pkl"), 'rb') as file:
+                mdict = pickle.load(file)
+
+            self.nb_arms      = mdict['nb_arms']
+            self.nb_positions = mdict['nb_positions']
+            self.list_transpositions = mdict['list_transpositions']
+            self.gamma = mdict['gamma']
+            self.forced_initiation = mdict['forced_initiation']
+            self.certitude = mdict['certitude']
+            self.kappa_thetas = mdict['kappa_thetas']
+            self.times_kappa_theta = mdict['times_kappa_theta']
+            self.upper_bound_kappa_theta = mdict['upper_bound_kappa_theta']
+            self.leader_count     = mdict['leader_count']
+            self.running_t        = mdict['running_t']
+            self.extended_leader  = mdict['extended_leader']
+
+            #### REWARD model PART
+            self.reward_model_path = mdict['reward_model_path']
+            self.reward_model      = self.load_rewardmodel()
+
+
+    def load_rewardmodel(self):
+            try:
+                self.reward_model = joblib.load(model_save_path)
+            except: 
+                self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+
+
+
+
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    import fire 
+    fire.Fire()
+    #import doctest
+    #doctest.testmod()
 
 #   python simulation.py  run2  --K 3 --name simul   --T 100     --dirout ztmp/exp/  --cfg config.yaml 
