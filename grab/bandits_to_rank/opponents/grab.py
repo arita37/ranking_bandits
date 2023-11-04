@@ -77,7 +77,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import joblib  # Import joblib
 
-
+from utilmy import log, os_makedirs
 
 import pandas as pd 
 
@@ -85,7 +85,8 @@ class GRAB:
     """
     """
 
-    def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False):
+    def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False,
+                 reward_model_path=None):
         """
         Parameters
         ----------
@@ -108,12 +109,12 @@ class GRAB:
         self.certitude = log(T)
         self.clean()
 
-        ####reward model.
-        #self.reward_model_path = 'ztmp/random_forest_model.joblib'
-
-        # self.reward_model = joblib.load(model_save_path)
-        self.reward_model      = RandomForestClassifier(n_estimators=10, random_state=0)
-
+        ####reward model Load
+        self.reward_model_path = reward_model_path
+        if reward_model_path is None :
+            self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+        else:
+            self.reward_model = self.load_rewardmodel() 
 
 
     def clean(self):
@@ -203,7 +204,7 @@ class GRAB:
                 ### Case real time partial fit
 
         """
-       #  model_save_path = 'random_forest_model.joblib'
+        #  model_save_path = 'random_forest_model.joblib'
         
         if mode == 'train':
             #Training reward model on the batch size 
@@ -211,21 +212,17 @@ class GRAB:
             y = true_rewards
             X_train, X_val, actions_train, actions_val, rewards_train, rewards_val = train_test_split(X, actions, y, test_size=0.2)
             self.reward_model.fit(np.column_stack((X_train, actions_train)), rewards_train)
-            predicted_rewards = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
+
 
             # Evaluate the model
+            predicted_rewards = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
             #accuracy = accuracy_score(rewards_val[0], predicted_rewards)
             #precision = precision_score(rewards_val[0], predicted_rewards)
             #recall = recall_score(rewards_val[0], predicted_rewards)
             f1 = f1_score(rewards_val[0], predicted_rewards)
-
-            #print(f'Accuracy: {accuracy}')
-            #print(f'Precision: {precision}')
-            #print(f'Recall: {recall}')
             print(f'F1-score: {f1}')      
-            from utilmy import os_makedirs
-            os_makedirs(self.reward_model_path)                  
-            joblib.dump(self.reward_model, self.reward_model_path)
+
+            self.save_rewardmodel()
         
 
         elif mode == 'predict':
@@ -246,8 +243,10 @@ class GRAB:
             for k in range(self.nb_positions):
                 item_k = actions[k]
                 kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
+
                 ### we use reward here
                 kappa_theta, n = kappa_theta + (predicted_rewards[k] - kappa_theta) / (n + 1), n + 1
+
                 start = start_up(kappa_theta, self.certitude, n)
                 upper_bound = newton(kappa_theta, self.certitude, n, start)
                 self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
@@ -348,12 +347,16 @@ class GRAB:
 
 
     def load_rewardmodel(self):
-            try:
-                self.reward_model = joblib.load(model_save_path)
-            except: 
-                self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+        try:
+            self.reward_model = joblib.load(self.reward_model_path)
+        except: 
+            print("cannot load, using default")
+            self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
-
+    def save_rewardmodel(self):
+        os_makedirs(self.reward_model_path)          
+        self.reward_model = joblib.save(self.reward_model_path )
+        log('saved', self.reward_model_path )
 
 
 if __name__ == "__main__":
