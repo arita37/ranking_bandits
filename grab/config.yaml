@@ -19,6 +19,7 @@ simul:
      agent_pars:
         nb_positions:      3   ###only display top 4
         gamma:            10
+        reward_model_path: 'ztmp/model_reward/model_reward.joblib'
   
 
 

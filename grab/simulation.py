@@ -480,11 +480,17 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         # agent = GRAB(**agent_pars)
         log(agent)    
 
+        #### Training Data  #####################################
+        nstep_train = 2000 ## maximum size of training data
+        n_item      = cc.n_item_all
+
+
         ### Metrics
         dd = {}
         log("\n##### Start Simul  ")
         regret_sum = 0
         regret_bad_cum = 0
+        dftrain = pd.DataFrame() #### contains all histo
         for t in range(0, len(dfg)):
 
             # Return One action :  1 full list of item_id  to be Displayed
@@ -497,22 +503,34 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             rwd_best             = np.sum( itemid_clk )   ### All Clicks               
             rwd_actual, rwd_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
             regret               = rwd_best - rwd_actual   #### Max Value  K items
-            regret_bad_cum.     += len(itemid_imp)  # Update regret_bad_cum
+            regret_bad_cum      += len(itemid_imp)  # Update regret_bad_cum
             regret_sum          += regret    #update regret sum 
-            regret_ratio.        = regret_sum / regret_bad_cum  #regret ratio calculation
+            regret_ratio         = regret_sum / regret_bad_cum  #regret ratio calculation
 
 
             context.append(loc_id)
             action_lst.append(action_list)
             reward_lst.append(rwd_list)
 
-            # agent.update(action_list, rwd_list). ### base model
 
+            ### Build historical train because RForest has no partial fit...
+            dfi = pd.dataframe()
+            dfi['y']          = rwd_list ### list size is L-items (ie all the items)
+            dfi['context-x1'] = loc_id   ### only 1 features
+
+
+            dftrain = pd.concat(( dfi, dftrain))             
+            dftrain = dftrain.iloc[:nstep_train * n_item,:] ### only keep ntime_step
+
+          
             #### Using Reward Learning from dynamic Context ###################
-            agent.update2([loc_id], action_list, rwd_list, mode='predict')
             if len(action_lst) % BATCH_SIZE == 0:
-                agent.update2(context, action_lst, reward_lst, mode='train')
+                # agent.update2(context, action_lst, reward_lst, mode='train')
+                agent.update2(dftrain, mode='train_reward') ### Update Reward Model + Grab Model
                 # print(action_lst, reward_lst)
+
+            #agent.update2([loc_id], action_list, rwd_list, mode='predict')
+            agent.update2( dfi, mode='use_reward_model')  ## Only update Grab model
 
 
             ####### Metrics ###################################################    

@@ -86,7 +86,7 @@ class GRAB:
     """
 
     def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False,
-                 reward_model_path=None):
+                 reward_model_path="ztmp/reward_model/model_reward.joblib"):
         """
         Parameters
         ----------
@@ -111,10 +111,11 @@ class GRAB:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
-        if reward_model_path is None :
-            self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
-        else:
-            self.reward_model = self.load_rewardmodel() 
+        ### if we want to load model: Explicit Load:   Grab.load_rewardmodel() 
+        #if reward_model_path is None :
+        #    self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+        #else:
+        #    self.reward_model = self.load_rewardmodel() 
 
 
     def clean(self):
@@ -180,61 +181,86 @@ class GRAB:
         self.update_transition()
 
 
-    def update2(self, context, actions, true_rewards, mode:str):
+    def update2(self, dftrain=None, mode:str):
         """ GRAB model parameters are updated HERE
 
-            + reward learning
+            dftrain: contain y value, X values.
+                     dim:  (FullHistosize_cutoff x  nbpositions ) x Nfeatures (=1) 
+
+
+            def update2(self, context, actions, rewards_true, mode:str):
+
+            + reward learning         
+                #### Correct Dimension: 
+                y:       (batchsize * self.nb_positions) x 1 col      
+                          1 row --> already 1 list of nb_positions Arms.
+
+                Xtrain: (batchsize * self.nb_positions) x Nfeatures (ie only 1: location)
+
+                        Features:  colcontext (location_id,...), colitems, ...
+
+          
+                We need to maintain the State of PAST rewards for Xtrain2:
+                  (if not partial fit, ex: RForest)         
+                We keep RForest , so no partial_fit --> need to store past rewards.
+
+                    Simulation --> merge(reward, context) --> Store on DISK as dftrain[X,y].csv
+                    grab : Load from disk the latest dftrain[X, y].csv
 
                 # print(context, actions, true_rewards, status)
                 
-                #### Predict rewards2
-                ### init 
-                # self.model_reward = RandomForest()
-                # self.Xhisto 
                 ### or batch past data fit s
                 # if mode='batch_fit':
-                #    y = rewards  
-                #    self.Xhisto = pd.concat((self.Xhisto, pd.DataFrame(context ) )
-                #    self.yhisto = pd.concat((self.yhisto, y)) 
-                #    self.model_reward.fit(self.Xhisto, yhisto )
 
-                # #### List of n_arms float  
-                # rewards2 = self.model_reward.predict(context)
+   
 
                 ### Case real time partial fit
 
         """
         #  model_save_path = 'random_forest_model.joblib'
         
-        if mode == 'train':
+        if mode == 'train_reward':
             #Training reward model on the batch size 
-            X = context
-            y = true_rewards
-            X_train, X_val, actions_train, actions_val, rewards_train, rewards_val = train_test_split(X, actions, y, test_size=0.2)
-            self.reward_model.fit(np.column_stack((X_train, actions_train)), rewards_train)
+            #X = context
+            #y = rewards_true    ### y is the rewards
+            #X_train, X_val, actions_train, actions_val, y_train, y_val = train_test_split(X, actions, y, test_size=0.2)
+            #X_train2 = np.column_stack((X_train, actions_train))
+            # from utilmy import pd_read_file
+            # df = pd_read_file(self.reward_data_train_path) ### ztmp/reward/dftrain.csv
+            y = dftrain['y']
+            X = dftrain.drop('y')
+
+            ntrain = int( 0.8 * len(df))
+            X_train, y_train = X.iloc[:ntrain, : ],  y.iloc[:ntrain ]
+            X_val, y_val     = X.iloc[ntrain:, : ],  y.iloc[ntrain: ]
+
+            self.reward_model.fit(X_train, y_train)
 
 
             # Evaluate the model
-            predicted_rewards = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
+            y_val_pred = self.reward_model.predict( X_val )[0].tolist()
+
+            #y_val_pred = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
             #accuracy = accuracy_score(rewards_val[0], predicted_rewards)
             #precision = precision_score(rewards_val[0], predicted_rewards)
             #recall = recall_score(rewards_val[0], predicted_rewards)
-            f1 = f1_score(rewards_val[0], predicted_rewards)
+            f1 = f1_score(y_val[0], y_val_pred)
             print(f'F1-score: {f1}')      
 
             self.save_rewardmodel()
         
 
-        elif mode == 'predict':
+        elif mode == 'use_reward_model':
             #Using trained model for prediction 
             #if os.path.exists(model_save_path):
             try:    
-                input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
-                predicted_rewards = self.reward_model.predict(input_features)[0].tolist()
+                # input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
+                # y_val_pred = self.reward_model.predict(input_features)[0].tolist()
+                y_val_pred = self.reward_model.predict(dftrain)[0].tolist()
 
             except Exception as e:
                 print(f"model failed", e)
-                predicted_rewards = true_rewards
+                y_val_pred = rewards_true
             
 
             # self.running_t += 1
@@ -245,7 +271,7 @@ class GRAB:
                 kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
 
                 ### we use reward here
-                kappa_theta, n = kappa_theta + (predicted_rewards[k] - kappa_theta) / (n + 1), n + 1
+                kappa_theta, n = kappa_theta + (y_val_pred[k] - kappa_theta) / (n + 1), n + 1
 
                 start = start_up(kappa_theta, self.certitude, n)
                 upper_bound = newton(kappa_theta, self.certitude, n, start)
