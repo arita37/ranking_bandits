@@ -520,6 +520,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
             dftrain = pd.concat(( dfi, dftrain))             
+            ### be careful of the cut off size should be mutiple of n_item.
             dftrain = dftrain.iloc[:nstep_train * n_item,:] ### only keep ntime_step
 
           
