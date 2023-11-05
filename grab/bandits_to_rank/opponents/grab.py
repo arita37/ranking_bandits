@@ -335,6 +335,8 @@ class GRAB:
         with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
             pickle.dump(mdict, file)
 
+       self.save_rewardmodel()     
+
 
     def load(self, dirin):
 
@@ -366,6 +368,14 @@ class GRAB:
         except: 
             print("cannot load, using default RandomForest")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+
+
+    def save_rewardmodel(self):
+
+        joblib.save(self.reward_model, self.reward_model_path)
+
+
+
 
 if __name__ == "__main__":
     import fire 
