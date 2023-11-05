@@ -111,11 +111,9 @@ class GRAB:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
+        self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
         self.clean()
 
-    def model(self, algo):
-        if algo == 'random_forest':
-            self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
     def clean(self):
         """ Clean log data. /To be ran before playing a new game. """
@@ -220,7 +218,6 @@ class GRAB:
         
         if mode == 'train_reward':
             
-            self.model('random_forest')
             #Training reward model on the batch size 
             #X = context
             #y = rewards_true    ### y is the rewards
