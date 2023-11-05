@@ -168,7 +168,6 @@ class GRAB:
 
             ### we use reward here
             kappa_theta, n = kappa_theta + (rewards[k] - kappa_theta) / (n + 1), n + 1
-            print(kappa_theta)
             start = start_up(kappa_theta, self.certitude, n)
             upper_bound = newton(kappa_theta, self.certitude, n, start)
             self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
@@ -218,14 +217,6 @@ class GRAB:
         #  model_save_path = 'random_forest_model.joblib'
         
         if mode == 'train_reward':
-            
-            #Training reward model on the batch size 
-            #X = context
-            #y = rewards_true    ### y is the rewards
-            #X_train, X_val, actions_train, actions_val, y_train, y_val = train_test_split(X, actions, y, test_size=0.2)
-            #X_train2 = np.column_stack((X_train, actions_train))
-            # from utilmy import pd_read_file
-            # df = pd_read_file(self.reward_data_train_path) ### ztmp/reward/dftrain.csv
             y = dftrain['y']
             X = dftrain.drop('y', axis =1)
 
@@ -253,6 +244,7 @@ class GRAB:
             try:    
                 # input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
                 # y_val_pred = self.reward_model.predict(input_features)[0].tolist()
+                # print('loading model for predicting')
                 y_val_pred = self.reward_model.predict(dftrain.drop('y', axis = 1)).tolist()
             except Exception as e:
                 print(f"model failed", e)
@@ -364,20 +356,15 @@ class GRAB:
             #### REWARD model PART
             self.reward_model_path = mdict['reward_model_path']
             self.reward_model      = mdict['reward_model']
-            return self.reward_model
+            
 
 
     def load_rewardmodel(self):
         try:
-            self.reward_model = self.load(self.reward_model_path)
+            self.load(self.reward_model_path)
         except: 
             print("cannot load, using default")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
-
-    def save_rewardmodel(self):
-        os_makedirs(self.reward_model_path, exist_ok= True)          
-        self.reward_model = joblib.dump(self.reward_model, self.reward_model_path )
-        print('saved', self.reward_model_path )
 
 if __name__ == "__main__":
     import fire 
