@@ -340,6 +340,7 @@ class GRAB:
 
             with open(os.path.join(dirin, "model_grab.pkl"), 'rb') as file:
                 mdict = pickle.load(file)
+
             self.nb_arms      = mdict['nb_arms']
             self.nb_positions = mdict['nb_positions']
             self.list_transpositions = mdict['list_transpositions']
@@ -355,15 +356,15 @@ class GRAB:
 
             #### REWARD model PART
             self.reward_model_path = mdict['reward_model_path']
-            self.reward_model      = mdict['reward_model']
+            self.reward_model      = self.load_rewardmodel()
             
 
 
     def load_rewardmodel(self):
         try:
-            self.load(self.reward_model_path)
+            self.reward_model = joblib.load(self.reward_model_path)
         except: 
-            print("cannot load, using default")
+            print("cannot load, using default RandomForest")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
 if __name__ == "__main__":
