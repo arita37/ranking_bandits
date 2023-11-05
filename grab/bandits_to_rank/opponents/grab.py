@@ -77,8 +77,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import joblib  # Import joblib
 
-from utilmy import log, os_makedirs
-
+# from utilmy import log, os_makedirs  #confusion between math log and utilmy log 
+from utilmy import os_makedirs  
 import pandas as pd 
 
 class GRAB:
@@ -86,7 +86,7 @@ class GRAB:
     """
 
     def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False,
-                 reward_model_path="ztmp/reward_model/model_reward.joblib"):
+                 reward_model_path="ztmp/reward_model/"):
         """
         Parameters
         ----------
@@ -107,16 +107,15 @@ class GRAB:
         self.gamma = gamma
         self.forced_initiation = forced_initiation
         self.certitude = log(T)
-        self.clean()
+        
 
         ####reward model Load
         self.reward_model_path = reward_model_path
-        ### if we want to load model: Explicit Load:   Grab.load_rewardmodel() 
-        #if reward_model_path is None :
-        #    self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
-        #else:
-        #    self.reward_model = self.load_rewardmodel() 
+        self.clean()
 
+    def model(self, algo):
+        if algo == 'random_forest':
+            self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
     def clean(self):
         """ Clean log data. /To be ran before playing a new game. """
@@ -181,7 +180,7 @@ class GRAB:
         self.update_transition()
 
 
-    def update2(self, dftrain=None, mode:str):
+    def update2(self, mode:str, dftrain=None):
         """ GRAB model parameters are updated HERE
 
             dftrain: contain y value, X values.
@@ -220,6 +219,8 @@ class GRAB:
         #  model_save_path = 'random_forest_model.joblib'
         
         if mode == 'train_reward':
+            
+            self.model('random_forest')
             #Training reward model on the batch size 
             #X = context
             #y = rewards_true    ### y is the rewards
@@ -228,51 +229,46 @@ class GRAB:
             # from utilmy import pd_read_file
             # df = pd_read_file(self.reward_data_train_path) ### ztmp/reward/dftrain.csv
             y = dftrain['y']
-            X = dftrain.drop('y')
+            X = dftrain.drop('y', axis =1)
 
-            ntrain = int( 0.8 * len(df))
+            ntrain = int( 0.8 * len(dftrain))
             X_train, y_train = X.iloc[:ntrain, : ],  y.iloc[:ntrain ]
             X_val, y_val     = X.iloc[ntrain:, : ],  y.iloc[ntrain: ]
-
             self.reward_model.fit(X_train, y_train)
 
 
             # Evaluate the model
-            y_val_pred = self.reward_model.predict( X_val )[0].tolist()
+            y_val_pred = self.reward_model.predict( X_val ).tolist()
 
             #y_val_pred = self.reward_model.predict(np.column_stack((X_val, actions_val)))[0].tolist()
             #accuracy = accuracy_score(rewards_val[0], predicted_rewards)
             #precision = precision_score(rewards_val[0], predicted_rewards)
             #recall = recall_score(rewards_val[0], predicted_rewards)
-            f1 = f1_score(y_val[0], y_val_pred)
-            print(f'F1-score: {f1}')      
-
-            self.save_rewardmodel()
-        
+            f1 = f1_score(y_val, y_val_pred)
+            print(f'F1-score: {f1}')     
+            self.save(self.reward_model_path)
 
         elif mode == 'use_reward_model':
             #Using trained model for prediction 
             #if os.path.exists(model_save_path):
+            self.load_rewardmodel()
             try:    
                 # input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
                 # y_val_pred = self.reward_model.predict(input_features)[0].tolist()
-                y_val_pred = self.reward_model.predict(dftrain)[0].tolist()
-
+                y_val_pred = self.reward_model.predict(dftrain.drop('y', axis = 1)).tolist()
             except Exception as e:
                 print(f"model failed", e)
-                y_val_pred = rewards_true
+                y_val_pred = dftrain['y']
             
 
             # self.running_t += 1
             ############# update GRAB model :ranking list ##########################################
             self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
             for k in range(self.nb_positions):
-                item_k = actions[k]
+                item_k = dftrain['actions'][k]
                 kappa_theta, n = self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k]
-
                 ### we use reward here
                 kappa_theta, n = kappa_theta + (y_val_pred[k] - kappa_theta) / (n + 1), n + 1
-
                 start = start_up(kappa_theta, self.certitude, n)
                 upper_bound = newton(kappa_theta, self.certitude, n, start)
                 self.kappa_thetas[item_k, k], self.times_kappa_theta[item_k, k] = kappa_theta, n
@@ -342,7 +338,8 @@ class GRAB:
             'running_t': self.running_t,
             'extended_leader': self.extended_leader,
 
-            'reward_model_path': self.reward_model_path 
+            'reward_model_path': self.reward_model_path, 
+            'reward_model': self.reward_model
         }
 
         with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
@@ -353,7 +350,6 @@ class GRAB:
 
             with open(os.path.join(dirin, "model_grab.pkl"), 'rb') as file:
                 mdict = pickle.load(file)
-
             self.nb_arms      = mdict['nb_arms']
             self.nb_positions = mdict['nb_positions']
             self.list_transpositions = mdict['list_transpositions']
@@ -369,21 +365,21 @@ class GRAB:
 
             #### REWARD model PART
             self.reward_model_path = mdict['reward_model_path']
-            self.reward_model      = self.load_rewardmodel()
+            self.reward_model      = mdict['reward_model']
+            return self.reward_model
 
 
     def load_rewardmodel(self):
         try:
-            self.reward_model = joblib.load(self.reward_model_path)
+            self.reward_model = self.load(self.reward_model_path)
         except: 
             print("cannot load, using default")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
     def save_rewardmodel(self):
-        os_makedirs(self.reward_model_path)          
-        self.reward_model = joblib.save(self.reward_model_path )
-        log('saved', self.reward_model_path )
-
+        os_makedirs(self.reward_model_path, exist_ok= True)          
+        self.reward_model = joblib.dump(self.reward_model, self.reward_model_path )
+        print('saved', self.reward_model_path )
 
 if __name__ == "__main__":
     import fire 
