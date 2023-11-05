@@ -86,7 +86,7 @@ class GRAB:
     """
 
     def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False,
-                 reward_model_path="ztmp/reward_model/"):
+                 reward_model_path="ztmp/model_model/reward_model.joblib"):
         """
         Parameters
         ----------
@@ -111,6 +111,7 @@ class GRAB:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
+        self.reward_model_name = 'reward_model.joblib'
         # self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
         self.load_rewardmodel()
         self.clean()
@@ -235,16 +236,12 @@ class GRAB:
             #recall = recall_score(rewards_val[0], predicted_rewards)
             f1 = f1_score(y_val, y_val_pred)
             print(f'F1-score: {f1}')     
-            self.save(self.reward_model_path)
+            self.save_rewardmodel()
 
         elif mode == 'use_reward_model':
             #Using trained model for prediction 
-            #if os.path.exists(model_save_path):
             self.load_rewardmodel()
             try:    
-                # input_features    = np.concatenate((context, actions.tolist()), axis = 0).reshape(1, -1)
-                # y_val_pred = self.reward_model.predict(input_features)[0].tolist()
-                # print('loading model for predicting')
                 y_val_pred = self.reward_model.predict(dftrain.drop('y', axis = 1)).tolist()
             except Exception as e:
                 print(f"model failed", e)
@@ -361,10 +358,15 @@ class GRAB:
 
     def load_rewardmodel(self):
         try:
-            self.load(self.reward_model_path)
+            self.reward_model = joblib.load(self.reward_model_path )
         except: 
             print("cannot load, using default")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+
+    def save_rewardmodel(self):
+        os_makedirs(self.reward_model_path)
+        joblib.dump(self.reward_model, self.reward_model_path)
+        # print(f'Reward model save in {self.reward_model}')
 
 if __name__ == "__main__":
     import fire 
