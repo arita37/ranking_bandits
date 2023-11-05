@@ -111,7 +111,8 @@ class GRAB:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
-        self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+        # self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
+        self.load_rewardmodel()
         self.clean()
 
 
