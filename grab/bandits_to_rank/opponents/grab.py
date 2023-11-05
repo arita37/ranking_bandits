@@ -86,7 +86,7 @@ class GRAB:
     """
 
     def __init__(self, nb_arms, nb_positions, T, gamma, forced_initiation=False,
-                 reward_model_path="ztmp/model_model/reward_model.joblib"):
+                 reward_model_path="ztmp/reward_model/reward_model.joblib"):
         """
         Parameters
         ----------
@@ -111,7 +111,6 @@ class GRAB:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
-        self.reward_model_name = 'reward_model.joblib'
         # self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
         self.load_rewardmodel()
         self.clean()
@@ -240,14 +239,12 @@ class GRAB:
 
         elif mode == 'use_reward_model':
             #Using trained model for prediction 
-            self.load_rewardmodel()
             try:    
                 y_val_pred = self.reward_model.predict(dftrain.drop('y', axis = 1)).tolist()
             except Exception as e:
                 print(f"model failed", e)
                 y_val_pred = dftrain['y']
             
-
             # self.running_t += 1
             ############# update GRAB model :ranking list ##########################################
             self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
@@ -332,11 +329,14 @@ class GRAB:
         with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
             pickle.dump(mdict, file)
 
+          
+
 
     def load(self, dirin):
 
             with open(os.path.join(dirin, "model_grab.pkl"), 'rb') as file:
                 mdict = pickle.load(file)
+
             self.nb_arms      = mdict['nb_arms']
             self.nb_positions = mdict['nb_positions']
             self.list_transpositions = mdict['list_transpositions']
@@ -352,21 +352,23 @@ class GRAB:
 
             #### REWARD model PART
             self.reward_model_path = mdict['reward_model_path']
-            self.reward_model      = mdict['reward_model']
+            self.reward_model      = self.load_rewardmodel()
             
 
 
     def load_rewardmodel(self):
         try:
-            self.reward_model = joblib.load(self.reward_model_path )
+            self.reward_model = joblib.load(self.reward_model_path)
         except: 
-            print("cannot load, using default")
+            print("cannot load, using default RandomForest")
             self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
 
     def save_rewardmodel(self):
         os_makedirs(self.reward_model_path)
         joblib.dump(self.reward_model, self.reward_model_path)
-        # print(f'Reward model save in {self.reward_model}')
+
+
+
 
 if __name__ == "__main__":
     import fire 
