@@ -481,7 +481,7 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         log(agent)    
 
         #### Training Data  #####################################
-        nstep_train = 2000 ## maximum size of training data
+        nstep_train = 200 ## maximum size of training data
         n_item      = cc.n_item_all
 
 
@@ -514,24 +514,26 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
 
             ### Build historical train because RForest has no partial fit...
-            dfi = pd.dataframe()
+            dfi = pd.DataFrame()
             dfi['y']          = rwd_list ### list size is L-items (ie all the items)
             dfi['context-x1'] = loc_id   ### only 1 features
+            dfi['actions'] = action_list
 
 
-            dftrain = pd.concat(( dfi, dftrain))             
+            dftrain = pd.concat(( dfi, dftrain))  
+            
             ### be careful of the cut off size should be mutiple of n_item.
-            dftrain = dftrain.iloc[:nstep_train * n_item,:] ### only keep ntime_step
+            dftrain = dftrain.iloc[:nstep_train*n_item,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
 
           
             #### Using Reward Learning from dynamic Context ###################
             if len(action_lst) % BATCH_SIZE == 0:
                 # agent.update2(context, action_lst, reward_lst, mode='train')
-                agent.update2(dftrain, mode='train_reward') ### Update Reward Model + Grab Model
+                agent.update2(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
                 # print(action_lst, reward_lst)
 
             #agent.update2([loc_id], action_list, rwd_list, mode='predict')
-            agent.update2( dfi, mode='use_reward_model')  ## Only update Grab model
+            agent.update2(mode='use_reward_model', dftrain = dfi)  ## Only update Grab model
 
 
             ####### Metrics ###################################################    
