@@ -197,7 +197,7 @@ def log3(*s):
 
 #########################################################################################
 ######### Version 2 : Multiple Clicks ###############################################################
-def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simulation.csv'):
+def generate_click_data2(cfg: str, name='simul3', T: int=None, dirout='data_simulation.csv'):
     """
     Generate a dataframe with sampled items and locations with binomial sampling
 
@@ -217,7 +217,6 @@ def generate_click_data2(cfg: str, name='simul', T: int=None, dirout='data_simul
     """
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
-
     T    = cfg1['T']  if T is None else T
     cfgd = cfg1['env_probas'] 
     locations = list(cfgd['loc_probas'].keys())
@@ -408,7 +407,7 @@ def run(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul=
 
 ##########################################################################################
 #######  Run with Contextual added to Reward learning ####################################
-def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+def run2(cfg:str="config.yaml", name='simul2', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
     """ Run Simulation 
 
          python simulation.py  run2  --cfg config.yaml --name 'simul'    --T 10    --dirout ztmp/exp/ --K 2
@@ -421,15 +420,18 @@ def run2(cfg:str="config.yaml", name='simul', dirout='ztmp/exp/', T=1000, nsimul
     dirout2 = dirout + f"/{dt}_T{T}"
     # cfg0    = config_load(cfg)
 
-
+    print('Name', name )
+    print(cfg)
     for i in range(nsimul):
         dirouti = f"{dirout2}/sim{i}"
+        print(dirouti)
         df      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
+        print(df)
         train_grab2(cfg, name, df, K=K, dirout=dirouti)
 
 
-def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
+def train_grab2(cfg,name='simul2', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
     Compute the regret at each iteration
@@ -448,12 +450,10 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     cfg1 = cfg0[name]
 
     cc = Box({})
-
     ### ENV Setup
     cc.n_item_all = len(df['item_id'].unique())
     cc.loc_id_all = len(df['loc_id'].unique())
     cc.nrows      = len(df)
-
     ### Agent Setup
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
@@ -468,17 +468,17 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
         dfg.columns = ['ts', 'itemid_list' ]
         dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
-        log('\n#### Simul data \n', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
+        # log('\n#### Simul data \n', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
 
 
-        log("\n#### Init New Agent ")
+        # log("\n#### Init New Agent ")
         agent_pars['T']       = len(dfg)      ## Correct T 
         agent_pars['nb_arms'] = cc.n_item_all ## Correct                
         agentClass = load_function_uri(agent_uri)
         agent      = agentClass(**agent_pars)
         cc.agent_pars = agent_pars        
         # agent = GRAB(**agent_pars)
-        log(agent)    
+        # log(agent)    
 
         #### Training Data  #####################################
         nstep_train = 200 ## maximum size of training data
@@ -548,15 +548,175 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         log(cc)
         json_save(cc, f"{dirout}/{loc_id}/params.json")    
 
-        log("###### Metrics Save ###########") 
+        # log("###### Metrics Save ###########") 
         df = metrics_create(dfg, dd)
         
-        log(df[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
+        # log(df[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
         diroutr = f"{dirout}/{loc_id}/metrics"
         pd_to_file(df, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
         dfs = df.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
-        log('action Final\n', df[[ 'action_list' ]])
+        # log('action Final\n', df[[ 'action_list' ]])
+        pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
+
+        # log("###### Agent Save ###########") 
+        diroutk = f"{dirout}/{loc_id}/agent"
+        os_makedirs(diroutk)
+        agent.save(diroutk)
+        agents.append(agent)
+        # log(diroutk)
+
+    return agents
+
+def run3(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+    """ Run Simulation 
+
+         python simulation.py  run3  --cfg config.yaml --name 'simul3'    --T 10    --dirout ztmp/exp/ --K 2
+
+         python simulation.py  run3  --cfg config.yaml --name 'simul3'    --T 10000    --dirout ztmp/exp/ --K 2
+
+
+    """
+    dt = date_now(fmt="%Y%m%d_%H%M")
+    dirout2 = dirout + f"/{dt}_T{T}"
+    # cfg0    = config_load(cfg)
+
+
+    for i in range(nsimul):
+        dirouti = f"{dirout2}/sim{i}"
+        df      = generate_click_data2(cfg= cfg, name=name, T=T, 
+                                       dirout= dirouti + f"/data/df_simul_{i}.csv")
+        train_grab3(cfg, name, df, K=K, dirout=dirouti)
+
+def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
+    """
+    Simulate and test a GRAB-based recommendation system using a provided dataset. 
+    Compute the regret at each iteration
+
+    Args:
+    - cfg (str): config
+
+
+       itemid_list : Displayed item at time step ts
+       itemid_clk :  1 (click) or 0 for items in Displayed items
+ 
+
+    """ 
+    BATCH_SIZE = 4   
+    cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
+    cfg1 = cfg0[name]
+
+    cc = Box({})
+    
+    ### ENV Setup
+    cc.n_item_all = len(df['item_id'].unique())
+    cc.loc_id_all = len(df['loc_id'].unique())
+    cc.nrows      = len(df)
+    
+    ### Agent Setup
+    agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
+    agent_pars  = cfg1['agent'].get('agent_pars', {} )
+
+    agents=[]
+    action_lst, reward_lst, context = [], [], []
+    
+    #### for each location: a New bandit optimizer
+    for loc_id in range(cc.loc_id_all):
+
+        ### Env: Flatten simulation data per time step
+        dfi         = df[df['loc_id'] == loc_id ]
+        dfg         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
+        dfg.columns = ['ts', 'itemid_list' ]
+        dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
+        log('\n#### Simul data \n', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
+
+
+        # log("\n#### Init New Agent ")
+        agent_pars['T']       = len(dfg)      ## Correct T 
+        agent_pars['nb_arms'] = cc.n_item_all ## Correct                
+        agentClass = load_function_uri(agent_uri)
+        agent      = agentClass(**agent_pars)
+        cc.agent_pars = agent_pars        
+        # agent = GRAB(**agent_pars)
+        # log(agent)    
+
+        #### Training Data  #####################################
+        nstep_train = 200 ## maximum size of training data
+        n_item      = cc.n_item_all
+
+
+        ### Metrics
+        dd = {}
+        log("\n##### Start Simul  ")
+        regret_sum = 0
+        regret_bad_cum = 0
+        dftrain = pd.DataFrame() #### contains all histo
+        print('Length of dataframe', len(dfg))
+        for t in range(0, len(dfg)):
+
+            # Return One action :  1 full list of item_id  to be Displayed
+            action_list, _ = agent.choose_next_arm()
+
+            #### ENV reward / clk 
+            itemid_imp = dfg['itemid_list'].values[t]
+            itemid_clk = dfg['itemid_clk' ].values[t]
+
+            rwd_best             = np.sum( itemid_clk )   ### All Clicks               
+            rwd_actual, rwd_list = rwd_sum_intersection( action_list, itemid_imp, itemid_clk,)
+            regret               = rwd_best - rwd_actual   #### Max Value  K items
+            regret_bad_cum      += len(itemid_imp)  # Update regret_bad_cum
+            regret_sum          += regret    #update regret sum 
+            regret_ratio         = regret_sum / regret_bad_cum  #regret ratio calculation
+
+
+            context.append(loc_id)
+            action_lst.append(action_list)
+            reward_lst.append(rwd_list)
+
+
+            ### Build historical train because RForest has no partial fit...
+            dfi = pd.DataFrame()
+            dfi['y']          = rwd_list ### list size is L-items (ie all the items)
+            dfi['context-x1'] = loc_id   ### only 1 features
+            dfi['actions'] = action_list
+
+
+            dftrain = pd.concat(( dfi, dftrain))  
+            
+            ### be careful of the cut off size should be mutiple of n_item.
+            dftrain = dftrain.iloc[:nstep_train*n_item,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
+
+          
+            #### Using Reward Learning from dynamic Context ###################
+            if len(action_lst) % BATCH_SIZE == 0:
+                # agent.update2(context, action_lst, reward_lst, mode='train')
+                agent.update2(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
+                # print(action_lst, reward_lst)
+
+            #agent.update2([loc_id], action_list, rwd_list, mode='predict')
+            agent.update2(mode='use_reward_model', dftrain = dfi)  ## Only update Grab model
+
+
+            ####### Metrics ###################################################    
+            dd = metrics_add(dd, 'action_list',   action_list)
+            dd = metrics_add(dd, 'rwd_best',      rwd_best    )
+            dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
+            dd = metrics_add(dd, 'rwd_list',      rwd_list    )
+            dd = metrics_add(dd, 'regret',        regret    )
+            dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )   #add regret ratio
+        ### Exp Params 
+        log(cc)
+        json_save(cc, f"{dirout}/{loc_id}/params.json")    
+
+        # log("###### Metrics Save ###########") 
+        df_result = metrics_create(dfg, dd)
+        
+        log(df_result[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
+        diroutr = f"{dirout}/{loc_id}/metrics"
+        pd_to_file(df_result, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+
+        dfs = df_result.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
         pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
 
         log("###### Agent Save ###########") 
@@ -567,8 +727,6 @@ def train_grab2(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         log(diroutk)
 
     return agents
-
-
 
 
 
