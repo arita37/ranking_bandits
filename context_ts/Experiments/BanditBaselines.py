@@ -209,6 +209,7 @@ class LinUCBClassifier:
         
     def name(self):
         return self.strat_name
+
     
 class LinTS:
     """Linear Thompson Sampling Strategy"""

@@ -568,6 +568,9 @@ def train_grab2(cfg,name='simul2', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
     return agents
 
+
+##########################################################################################
+#######  Run with 2 locations  ###########################################################
 def run3(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
     """ Run Simulation 
 
@@ -588,6 +591,7 @@ def run3(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimu
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
         train_grab3(cfg, name, df, K=K, dirout=dirouti)
 
+
 def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
@@ -601,10 +605,23 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
        itemid_clk :  1 (click) or 0 for items in Displayed items
  
 
+    ##### In location 0 : 
+    # For location 0 :    Top-3 best item_id are. [ 6, 5,4 ] with click proba  [ 0.95, 0.9, 0.8 ]
+    # For location 1 :    Top-3 best item_id are. [ 0, 1, 3 ] with click proba [ 0.95, 0.9, 0.8 ]
+    ####   Goal of reward learning : to predict correct level of reward based on location
+    ####   reward_list_pred = model_regression.predict(X= [ loc_id,  real_reward_click ],  )
+
+
+    We will another model called: Thompsom Sampling.
+
+    
+
+
     """ 
     BATCH_SIZE = 4   
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
+    print(cfg1)
 
     cc = Box({})
     
