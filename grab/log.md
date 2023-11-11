@@ -42,7 +42,7 @@ Task List:
     dfg = df.groupby(['loc_id', 'item_id']).agg({'is_clk': 'sum', 'ts': 'count'}).reset_index()
     dfg.columns = ['loc_id', 'item_id', 'n_clk', 'n_imp']
     dfg['ctr'] = dfg['n_clk'] / dfg['n_imp']
-    
+
 
          item_probas:
             # locid:   [itemid0, itemid1, itemid3, ...]
@@ -54,6 +54,7 @@ Task List:
         ##### In location 0 : 
         # For location 0 :    Top-3 best item_id are. [ 6, 5,4 ] with click proba  [ 0.95, 0.9, 0.8 ]
         # For location 1 :    Top-3 best item_id are. [ 0, 1, 3 ] with click proba [ 0.95, 0.9, 0.8 ]
+
 
 
 
