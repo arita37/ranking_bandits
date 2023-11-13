@@ -243,7 +243,7 @@ def generate_click_data2(cfg: str, name='simul3', T: int=None, dirout='data_simu
     if dirout is not None:
         pd_to_file(df, dirout, index=False, show=1)
         pd_to_file(dfg, dirout.replace(".csv", "_stats.csv"), index=False, show=1)        
-    return df
+    return df, dfg
 
 
 def train_grab(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
@@ -587,12 +587,12 @@ def run3(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimu
 
     for i in range(nsimul):
         dirouti = f"{dirout2}/sim{i}"
-        df      = generate_click_data2(cfg= cfg, name=name, T=T, 
+        df, dfstat      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
-        train_grab3(cfg, name, df, K=K, dirout=dirouti)
+        train_grab3(cfg, name, df, dfstat, K=K, dirout=dirouti)
 
 
-def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
+def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=None, K=10, dirout="ztmp/"):
     """
     Simulate and test a GRAB-based recommendation system using a provided dataset. 
     Compute the regret at each iteration
@@ -621,7 +621,7 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     BATCH_SIZE = 4   
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
-    print(cfg1)
+    
 
     cc = Box({})
     
@@ -635,8 +635,14 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
 
     agents=[]
-    action_lst, reward_lst, context = [], [], []
-    
+ 
+    ### Metrics
+    dd = {}
+    log("\n##### Start Simul  ")
+    regret_sum = 0
+    regret_bad_cum = 0
+    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
+    print('DF_STAT', dfstat)
     #### for each location: a New bandit optimizer
     for loc_id in range(cc.loc_id_all):
 
@@ -646,8 +652,7 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         dfg.columns = ['ts', 'itemid_list' ]
         dfg['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
         log('\n#### Simul data \n', dfg[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
-
-
+        
         # log("\n#### Init New Agent ")
         agent_pars['T']       = len(dfg)      ## Correct T 
         agent_pars['nb_arms'] = cc.n_item_all ## Correct                
@@ -660,15 +665,6 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
         #### Training Data  #####################################
         nstep_train = 200 ## maximum size of training data
         n_item      = cc.n_item_all
-
-
-        ### Metrics
-        dd = {}
-        log("\n##### Start Simul  ")
-        regret_sum = 0
-        regret_bad_cum = 0
-        dftrain = pd.DataFrame() #### contains all histo
-        print('Length of dataframe', len(dfg))
         for t in range(0, len(dfg)):
 
             # Return One action :  1 full list of item_id  to be Displayed
@@ -685,18 +681,11 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             regret_sum          += regret    #update regret sum 
             regret_ratio         = regret_sum / regret_bad_cum  #regret ratio calculation
 
-
-            context.append(loc_id)
-            action_lst.append(action_list)
-            reward_lst.append(rwd_list)
-
-
             ### Build historical train because RForest has no partial fit...
             dfi = pd.DataFrame()
             dfi['y']          = rwd_list ### list size is L-items (ie all the items)
             dfi['context-x1'] = loc_id   ### only 1 features
             dfi['actions'] = action_list
-
 
             dftrain = pd.concat(( dfi, dftrain))  
             
@@ -705,43 +694,50 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
 
           
             #### Using Reward Learning from dynamic Context ###################
-            if len(action_lst) % BATCH_SIZE == 0:
+            if len(dftrain) % BATCH_SIZE == 0:
                 # agent.update2(context, action_lst, reward_lst, mode='train')
-                agent.update2(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
-                # print(action_lst, reward_lst)
+                reward = agent.update2(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
 
             #agent.update2([loc_id], action_list, rwd_list, mode='predict')
-            agent.update2(mode='use_reward_model', dftrain = dfi)  ## Only update Grab model
+            predicted_reward = agent.update2(mode='use_reward_model', dftrain = dfi)  ## Only update Grab model
 
 
-            ####### Metrics ###################################################    
+            ####### Metrics ###################################################  
+            dd = metrics_add(dd, 'context', loc_id)
             dd = metrics_add(dd, 'action_list',   action_list)
             dd = metrics_add(dd, 'rwd_best',      rwd_best    )
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
-            dd = metrics_add(dd, 'rwd_list',      rwd_list    )
+            dd = metrics_add(dd, 'rwd_list',      rwd_list   )
+            dd = metrics_add(dd, 'predicted_reward', predicted_reward)
             dd = metrics_add(dd, 'regret',        regret    )
-            dd = metrics_add(dd, 'regret_bad_cum',  t * len(itemid_imp)   )   #### Worst case  == Linear
-            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )   #add regret ratio
-        ### Exp Params 
-        log(cc)
-        json_save(cc, f"{dirout}/{loc_id}/params.json")    
+            dd = metrics_add(dd, 'regret_bad_cum',  regret_sum )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )  
+        # collecting data on the basis of context
+        df_collect = pd.concat((df_collect, dfg)).reset_index(drop = True)  #concat dataframe
+        try:
+            df_collect = df_collect.drop('level_0', axis=1, errors='ignore') #drop if it exist column level_0
+        except:
+            pass
+     ### Exp Params 
+    log(cc)
+    json_save(cc, f"{dirout}/params.json")    
 
-        # log("###### Metrics Save ###########") 
-        df_result = metrics_create(dfg, dd)
-        
-        log(df_result[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
-        diroutr = f"{dirout}/{loc_id}/metrics"
-        pd_to_file(df_result, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+    # log("###### Metrics Save ###########") 
+    df_result = metrics_create(df_collect, dd)
+    
+    log(df_result[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
+    diroutr = f"{dirout}/metrics"
+    pd_to_file(df_result, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
-        dfs = df_result.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
-        pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
+    dfs = df_result.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
+    pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
 
-        log("###### Agent Save ###########") 
-        diroutk = f"{dirout}/{loc_id}/agent"
-        os_makedirs(diroutk)
-        agent.save(diroutk)
-        agents.append(agent)
-        log(diroutk)
+    log("###### Agent Save ###########") 
+    diroutk = f"{dirout}/agent"
+    os_makedirs(diroutk)
+    agent.save(diroutk)
+    agents.append(agent)
+    log(diroutk)
 
     return agents
 
@@ -800,7 +796,7 @@ def metrics_add(dd, name, val):
 def metrics_create(dfg, dd:dict ):
     df = pd.DataFrame(dd)
     df = pd.concat((dfg, df), axis=1) ### concat the simul
-
+    print('metric creation dataframe', df)
     for ci in df.columns:
         x0 = df[ci].values[0]
         if isinstance(x0,list) or isinstance(x0, np.ndarray ):

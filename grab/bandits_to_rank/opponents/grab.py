@@ -244,7 +244,7 @@ class GRAB:
             except Exception as e:
                 print(f"model failed", e)
                 y_val_pred = dftrain['y']
-            
+            print(dftrain['y'])
             # self.running_t += 1
             ############# update GRAB model :ranking list ##########################################
             self.leader_count[tuple(self.extended_leader[:self.nb_positions])] += 1
@@ -261,7 +261,7 @@ class GRAB:
             # update the leader L(n) (in the neighborhood of previous leader)
             self.update_leader()
             self.update_transition()
-
+        return y_val_pred
 
     def update_leader(self):
         """
