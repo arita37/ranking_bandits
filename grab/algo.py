@@ -86,13 +86,29 @@ class newBandit:
          return topk_list, 0
 
 
-    def topk_predict(self, reward_list):
-         As = np.sort(  reward_list   )
+    def topk_predict_list(self, reward_list):
+
+         A  = np.arange(0, self.n_arms) ### all arm
+
+         As = np.sort( A,   by= x[1]   )
          As = As[: self.nb_positions - self.R]
 
          for i in range(self.nb_positions - self.R , self.nb_positions):
 
-            plist
+             Aneg = A.remove(As)
+
+             for u in range(0, len(Aneg) ):
+
+               imax = np.argmax(reward_list)
+   
+               if i != imax : 
+                    Plist[ u ] = 1/ len(Aneg) + gamma * ( reward_list[imax]  - reward_list[u]    )  
+               else: 
+                    Plist[ u ] = 1 - np.sum(  ) 
+
+         u = np.random.choice( xlist,  p=plist)
+
+
 
 
 
