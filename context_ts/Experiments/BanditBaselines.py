@@ -271,7 +271,9 @@ class LinTS:
 
     def name(self):
         return self.strat_name
-        
+
+
+
 class LinTSClassifier:
     """Linear Thompson Sampling Strategy for a classification task"""
     def __init__(self,X,Y,nu,bandit_generator=None,reg=1,name='LinTSClassifier'):
