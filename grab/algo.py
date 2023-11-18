@@ -79,15 +79,30 @@ class newBandit:
     def empty(): # to enable pickling
         return 0
 
-    def choose_next_arm(self, X):
+    def choose_next_arm(self, Xcontext):
+         """ 
 
-         reward_all_items = self.model_reward.predict_rewards_float(X) ### predict Average reward for each item
+
+
+         """
+
+         ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
+         reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
+
+
+         ### Select Best:  list of item_id   len(topk_list) =  self.nb_positions 
+         ## before it was GRAB, 
          topk_list        = self.topk_predict_list(reward_all_items)   
          return topk_list, 0
 
 
     def topk_predict_list(self, reward_list):
+         """ 
+             Algo here
+             https://docs.google.com/document/d/1Dz3FVHaxKRfiN7r-n-DwH-zpR4gGjmWk5WjoLIipZ28/edit
 
+             
+         """
          A  = np.arange(0, self.n_arms) ### all arm
 
          As = np.sort( A,   by= x[1]   )
@@ -196,6 +211,13 @@ def test1():
 
 
 class LinearTS:
+    """ 
+       Predict mean reward for each item.
+          using Bayesian sampling :
+             m(k) = Normal( mu_k, var_k )
+
+
+    """
     def __init__(self, n_arms, d, alpha=1.0):
         self.n_arms = n_arms
         self.d = d ## context dim
@@ -211,7 +233,7 @@ class LinearTS:
             context = context[i_arm].reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
-            self.mu_hat    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
+            self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
 
 
     def get_arm(self, contexts):
