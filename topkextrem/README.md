@@ -221,6 +221,7 @@ Xtest  = smat.load_npz("path/test/X.npz")
 Ytest  = smat.load_npz("path/test/Y.npz")
 tei = np.random.permutation(np.arange(Xtest.shape[0]))
 tri = np.random.choice(Xtrain.shape[0], Xtrain.shape[0])
+
 # Size of initialization supervised set used for training tree and routing functions
 init_batch = 5000
 Xtrain, Ytrain = Xtrain[tri, :], Ytrain[tri, :]
