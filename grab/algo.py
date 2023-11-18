@@ -25,6 +25,12 @@ import joblib  # Import joblib
 from utilmy import os_makedirs  
 import pandas as pd 
 
+def test2():
+    pass 
+
+
+
+
 class newBandit:
     """
     """
@@ -90,41 +96,55 @@ class newBandit:
          reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
 
 
-         ### Select Best:  list of item_id   len(topk_list) =  self.nb_positions 
+         ###Algo to Select Best List:  list of item_id   len(topk_list) =  self.nb_positions 
          ## before it was GRAB, 
          topk_list        = self.topk_predict_list(reward_all_items)   
          return topk_list, 0
 
 
-    def topk_predict_list(self, reward_list):
+    def topk_predict_list(self, reward_list_float):
          """ 
+              www.phind.com
+
+
              Algo here
              https://docs.google.com/document/d/1Dz3FVHaxKRfiN7r-n-DwH-zpR4gGjmWk5WjoLIipZ28/edit
 
-             
-         """
-         A  = np.arange(0, self.n_arms) ### all arm
+           Be careful
 
-         As = np.sort( A,   by= x[1]   )
+                  A=   [ (item_id, reward_value) , .... ]
+
+          As initialized to   [0, M-R]      Best reward value items
+
+                             [M-R+1,  M]    items : exploration.
+
+         """
+         gamma = 1.0 
+
+         A  = np.arange(0, self.n_arms) ### all items
+
+
+         As = np.sort( A,   by= reward_list_float[1]   )        #### List sorted by best reward value
          As = As[: self.nb_positions - self.R]
 
+         #### Add R remaining items by exploration 
          for i in range(self.nb_positions - self.R , self.nb_positions):
 
              Aneg = A.remove(As)
 
              for u in range(0, len(Aneg) ):
 
-               imax = np.argmax(reward_list)
+               imax = np.argmax(Aneg_reward ) 
    
                if i != imax : 
-                    Plist[ u ] = 1/ len(Aneg) + gamma * ( reward_list[imax]  - reward_list[u]    )  
+                    Plist[ u ] = 1/ len(Aneg) + gamma * ( reward_list_float[imax]  - reward_list_float[u]    )  
                else: 
                     Plist[ u ] = 1 - np.sum(  ) 
 
          u = np.random.choice( xlist,  p=plist)
 
 
-
+         return list_of_itemid #### [ 7,5 , 8, 1, ]
 
 
     def update(self, mode:str, dftrain=None):
