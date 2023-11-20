@@ -26,7 +26,7 @@ from utilmy import os_makedirs
 import pandas as pd 
 
 def test2():
-    n_arms = 10
+    n_arms = 5
     nb_positions =5
     T = 10 
     gamma = 0.1
@@ -64,7 +64,7 @@ class newBandit:
         self.n_arms = n_arms             ### Total number of item: L
         self.nb_positions = nb_positions   ### return action list size : K < L items
 
-        self.R = 2 ### exploration list
+        self.R = 3 ### exploration list
 
 
         self.forced_initiation = forced_initiation
@@ -105,7 +105,6 @@ class newBandit:
 
         ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
         reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
-
         ###Algo to Select Best List:  list of item_id   len(topk_list) =  self.nb_positions 
         ## before it was GRAB, 
         topk_list        = self.topk_predict_list(reward_all_items)   
@@ -142,7 +141,6 @@ class newBandit:
         As = [reward_list_float[i] for i in indices_descending]
         # As_exploit represents the best reward value items
         As_exploit = As[: self.nb_positions - self.R]
-         
         #### Add R remaining items by exploration 
         for i in range(1, self.R + 1):
             # Aneg represents the remaining items for exploration
@@ -158,12 +156,14 @@ class newBandit:
                 else: 
                     Plist[u] = 1 - np.sum(Aneg)
             # Sample from Plist to select an item for exploration
-            sample = np.array([[[np.random.choice(Plist)]]])
+            # sample = np.array([[[np.random.choice(Plist)]]])
+            # Normalize Plist to ensure probabilities sum to 1
+            Plist_normalized = Plist / np.sum(Plist)
+            sample = ([[np.random.choice(Aneg, size=1, p=Plist_normalized, replace=True)]])
             # Update As_exploit by adding the sampled item
             As_exploit = np.concatenate([As_exploit, sample])
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(As_exploit.flatten())[::-1]
-
         # Get the top k items
         top_items = indices_descending[:self.nb_positions]
         
@@ -216,7 +216,7 @@ class newBandit:
             self.reward_model = joblib.load(self.reward_model_path)
         except: 
             print("cannot load, using default ")
-            self.reward_model =  LinearTS(self.n_arms, 5, 0.1, )
+            self.reward_model =  LinearTS()
 
     def save_rewardmodel(self):
         os_makedirs(self.reward_model_path)
