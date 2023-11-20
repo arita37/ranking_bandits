@@ -26,17 +26,27 @@ from utilmy import os_makedirs
 import pandas as pd 
 
 def test2():
-    pass 
-
-
-
+    n_arms = 10
+    nb_positions =5
+    T = 10 
+    gamma = 0.1
+    bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
+    contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
+    top_k_list, reward_all_items = bandit.choose_next_arm(contexts)
+    print('Top k items', top_k_list)
+    print('Updating Batch Reward list and context')
+    bandit.reward_model.update_batch(reward_all_items, contexts)
+    print('-------------Complete-----------')
+    bandit.save_rewardmodel()
+    print('Reward model save')
+    
 
 class newBandit:
     """
     """
 
     def __init__(self, n_arms, nb_positions, T, gamma, forced_initiation=False,
-                 reward_model_path="ztmp/reward_model/reward_model.joblib"):
+                 reward_model_path="ztmp/reward_model/reward_model11.joblib"):
         """
         Parameters
         ----------
@@ -62,6 +72,7 @@ class newBandit:
 
         ####reward model Load
         self.reward_model_path = reward_model_path
+        
         # self.reward_model = RandomForestClassifier(n_estimators=10, random_state=0)
         self.load_rewardmodel()
         self.clean()
@@ -86,67 +97,78 @@ class newBandit:
         return 0
 
     def choose_next_arm(self, Xcontext):
-         """ 
+        """ 
 
 
 
-         """
+        """
 
-         ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
-         reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
+        ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
+        reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
 
-
-         ###Algo to Select Best List:  list of item_id   len(topk_list) =  self.nb_positions 
-         ## before it was GRAB, 
-         topk_list        = self.topk_predict_list(reward_all_items)   
-         return topk_list, 0
+        ###Algo to Select Best List:  list of item_id   len(topk_list) =  self.nb_positions 
+        ## before it was GRAB, 
+        topk_list        = self.topk_predict_list(reward_all_items)   
+        return topk_list, reward_all_items
 
 
     def topk_predict_list(self, reward_list_float):
-         """ 
-              www.phind.com
+        """ 
+            www.phind.com
 
 
-             Algo here
-             https://docs.google.com/document/d/1Dz3FVHaxKRfiN7r-n-DwH-zpR4gGjmWk5WjoLIipZ28/edit
+            Algo here
+            https://docs.google.com/document/d/1Dz3FVHaxKRfiN7r-n-DwH-zpR4gGjmWk5WjoLIipZ28/edit
 
-           Be careful
+        Be careful
 
-                  A=   [ (item_id, reward_value) , .... ]
+                A=   [ (item_id, reward_value) , .... ]
 
-          As initialized to   [0, M-R]      Best reward value items
+        As initialized to   [0, M-R]      Best reward value items
 
-                             [M-R+1,  M]    items : exploration.
+                            [M-R+1,  M]    items : exploration.
 
-         """
-         gamma = 1.0 
+        """
+        gamma = 1.0 
 
-         A  = np.arange(0, self.n_arms) ### all items
+        A  = np.arange(0, self.n_arms) ### all items
+        print('All item', A)
+        concatenated_array = np.concatenate(reward_list_float, axis=0)
 
+        # Get the indices that would sort the concatenated array in descending order
+        indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
 
-         As = np.sort( A,   by= reward_list_float[1]   )        #### List sorted by best reward value
-         As = As[: self.nb_positions - self.R]
+        # Use the indices to sort the original list of arrays
+        As = [reward_list_float[i] for i in indices_descending]
+        # As_exploit represents the best reward value items
+        As_exploit = As[: self.nb_positions - self.R]
+         
+        #### Add R remaining items by exploration 
+        for i in range(1, self.R + 1):
+            # Aneg represents the remaining items for exploration
+            Aneg = np.setdiff1d(As, As_exploit)
+            # Initialize Plist with zeros
+            Plist = np.zeros(len(Aneg))
+            for u in range(0, len(Aneg) ):
+                # Find the argmax(a belongs to Aneg) r(Xs, a)
+                imax = np.argmax(Aneg)
+                # Calculate Plist based on exploration 
+                if i != imax : 
+                    Plist[u] = np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0)  
+                else: 
+                    Plist[u] = 1 - np.sum(Aneg)
+            # Sample from Plist to select an item for exploration
+            sample = np.array([[[np.random.choice(Plist)]]])
+            # Update As_exploit by adding the sampled item
+            As_exploit = np.concatenate([As_exploit, sample])
+        # Flatten the array and get the indices that would sort it in descending order
+        indices_descending = np.argsort(As_exploit.flatten())[::-1]
 
-         #### Add R remaining items by exploration 
-         for i in range(self.nb_positions - self.R , self.nb_positions):
-
-             Aneg = A.remove(As)
-
-             for u in range(0, len(Aneg) ):
-
-               imax = np.argmax(Aneg_reward ) 
+        # Get the top k items
+        top_items = indices_descending[:self.nb_positions]
+        
+        return top_items #### [ 7,5 , 8, 1, ]
    
-               if i != imax : 
-                    Plist[ u ] = 1/ len(Aneg) + gamma * ( reward_list_float[imax]  - reward_list_float[u]    )  
-               else: 
-                    Plist[ u ] = 1 - np.sum(  ) 
-
-         u = np.random.choice( xlist,  p=plist)
-
-
-         return list_of_itemid #### [ 7,5 , 8, 1, ]
-
-
     def update(self, mode:str, dftrain=None):
         """ GRAB model parameters are updated HERE
 
@@ -172,9 +194,6 @@ class newBandit:
         with open(os.path.join(dirout, 'model_grab.pkl'), 'wb') as file:
             pickle.dump(mdict, file)
 
-          
-
-
     def load(self, dirin):
 
             with open(os.path.join(dirin, "model_grab.pkl"), 'rb') as file:
@@ -191,21 +210,17 @@ class newBandit:
             #### REWARD model PART
             self.reward_model_path = mdict['reward_model_path']
             self.reward_model      = self.load_rewardmodel()
-            
-
 
     def load_rewardmodel(self):
         try:
             self.reward_model = joblib.load(self.reward_model_path)
         except: 
             print("cannot load, using default ")
-            self.reward_model =  LinearTS(self.n_arms, 5, 0., )
+            self.reward_model =  LinearTS(self.n_arms, 5, 0.1, )
 
     def save_rewardmodel(self):
         os_makedirs(self.reward_model_path)
         joblib.dump(self.reward_model, self.reward_model_path)
-
-
 
 
 
@@ -219,7 +234,6 @@ def test1():
 
         contexts =[  np.random.rand(1, d) for i in range(0, n_arms) ]
         reward_list = model.predict_rewards_float(contexts)
-
         ###########
         rewards  = np.random.rand(n_arms) ### Real reward
         contexts =[  np.random.rand(1, d) for i in range(0, n_arms) ]
@@ -250,7 +264,7 @@ class LinearTS:
 
     def update_batch(self, reward_list, context_all):
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_all)):
-            context = context[i_arm].reshape(-1, 1)
+            context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
             self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
