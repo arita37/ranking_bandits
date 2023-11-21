@@ -136,11 +136,16 @@ class newBandit:
 
         # Get the indices that would sort the concatenated array in descending order
         indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
-
+        print('Input all reward list', reward_list_float)
         # Use the indices to sort the original list of arrays
         As = [reward_list_float[i] for i in indices_descending]
         # As_exploit represents the best reward value items
         As_exploit = As[: self.nb_positions - self.R]
+        print('')
+        print('Exploitation reward', As_exploit)
+        print('')
+        print(f'Expolaration : {self.R}, so the expolaration rewrds {As[self.nb_positions - self.R :]}')
+        print('')
         #### Add R remaining items by exploration 
         for i in range(1, self.R + 1):
             # Aneg represents the remaining items for exploration
