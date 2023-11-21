@@ -130,6 +130,7 @@ class newBandit:
         # Get the indices that would sort the concatenated array in descending order
         indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
         print('Input all reward list', reward_list_float)
+        print('Indices', indices_descending)
         # Use the indices to sort the original list of arrays
         As = [reward_list_float[i] for i in indices_descending]
         # As_exploit represents the best reward value items
@@ -161,7 +162,7 @@ class newBandit:
             
             # Update As_exploit by adding the sampled item
             As_exploit = np.concatenate([As_exploit, sample])
-            
+        
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(As_exploit.flatten())[::-1]
         # Get the top k items
@@ -263,11 +264,16 @@ class LinearTS:
 
 
     def update_batch(self, reward_list, context_all):
+        print('Before Batch Update ')
+        print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_all)):
             context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
             self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
+        print('')
+        print('After Batch Update')
+        print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
     def get_arm(self, contexts):
