@@ -65,6 +65,7 @@ class newBandit:
         self.nb_positions = nb_positions   ### return action list size : K < L items
 
         self.R = 3 ### exploration list
+        self.gamma = 1.0                     
 
 
         self.forced_initiation = forced_initiation
@@ -87,10 +88,6 @@ class newBandit:
         self.extended_leader = [i for i in range(self.n_arms)]; shuffle(self.extended_leader)
         self.list_transpositions = [(0, 0)]
 
-        self.kappa_thetas = np.zeros((self.n_arms, self.n_arms))
-        self.times_kappa_theta = np.zeros((self.n_arms, self.nb_positions))
-        self.upper_bound_kappa_theta = np.ones((self.n_arms, self.n_arms))
-        self.leader_count = defaultdict(self.empty)  # number of time each arm has been the leader
 
     @staticmethod
     def empty(): # to enable pickling
@@ -105,6 +102,8 @@ class newBandit:
 
         ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
         reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
+
+        
         ###Algo to Select Best List:  list of item_id   len(topk_list) =  self.nb_positions 
         ## before it was GRAB, 
         topk_list        = self.topk_predict_list(reward_all_items)   
@@ -113,12 +112,6 @@ class newBandit:
 
     def topk_predict_list(self, reward_list_float):
         """ 
-            www.phind.com
-
-
-            Algo here
-            https://docs.google.com/document/d/1Dz3FVHaxKRfiN7r-n-DwH-zpR4gGjmWk5WjoLIipZ28/edit
-
         Be careful
 
                 A=   [ (item_id, reward_value) , .... ]
@@ -128,7 +121,7 @@ class newBandit:
                             [M-R+1,  M]    items : exploration.
 
         """
-        gamma = 1.0 
+        gamma = self.gamma
 
         A  = np.arange(0, self.n_arms) ### all items
         print('All item', A)
@@ -160,13 +153,15 @@ class newBandit:
                     Plist[u] = np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0)  
                 else: 
                     Plist[u] = 1 - np.sum(Aneg)
+                    
             # Sample from Plist to select an item for exploration
-            # sample = np.array([[[np.random.choice(Plist)]]])
             # Normalize Plist to ensure probabilities sum to 1
             Plist_normalized = Plist / np.sum(Plist)
             sample = ([[np.random.choice(Aneg, size=1, p=Plist_normalized, replace=True)]])
+            
             # Update As_exploit by adding the sampled item
             As_exploit = np.concatenate([As_exploit, sample])
+            
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(As_exploit.flatten())[::-1]
         # Get the top k items
