@@ -130,18 +130,26 @@ class newBandit:
         # Get the indices that would sort the concatenated array in descending order
         indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
         print('Input all reward list', reward_list_float)
-        print('Indices', indices_descending)
+        print('After sorting item id on the basis of best reward', indices_descending)
         # Use the indices to sort the original list of arrays
         As = [reward_list_float[i] for i in indices_descending]
-        # As_exploit represents the best reward value items
+        # As_exploit list on the basis df best/highest reward value 
         As_exploit = As[: self.nb_positions - self.R]
+        As_explore = As[self.nb_positions - self.R:]
+        As_expoit_item_id = indices_descending[: self.nb_positions - self.R]
+        As_explore_item_id = indices_descending[self.nb_positions - self.R:]
+        
+        
         print('')
-        print('Exploitation reward', As_exploit)
+        print(f'Exploitation reward: {As_exploit} and item id {As_expoit_item_id}')
         print('')
-        print(f'Expolaration : {self.R}, so the expolaration rewrds {As[self.nb_positions - self.R :]}')
+        print(f'Expolaration : {self.R}, so the expolaration rewrds {As_explore}')
+        print('Items need to explore',As_explore_item_id)
         print('')
+        reward_dict = {f'{i}': array for i, array in enumerate(reward_list_float)}
+        new_array_list =  []
         #### Add R remaining items by exploration 
-        for i in range(1, self.R + 1):
+        for i in As_explore_item_id:
             # Aneg represents the remaining items for exploration
             Aneg = np.setdiff1d(As, As_exploit)
             # Initialize Plist with zeros
@@ -161,13 +169,17 @@ class newBandit:
             sample = ([[np.random.choice(Aneg, size=1, p=Plist_normalized, replace=True)]])
             
             # Update As_exploit by adding the sampled item
-            As_exploit = np.concatenate([As_exploit, sample])
-        
+            new_array_list.append(sample)
         # Flatten the array and get the indices that would sort it in descending order
-        indices_descending = np.argsort(As_exploit.flatten())[::-1]
+        indices_descending = np.argsort(np.array(new_array_list).flatten())[::-1]
+        #mapping the orginal reward array index to sorted reward array index which is obtained from exploration
+        map = {0:As_explore_item_id[0], 1:As_explore_item_id[1], 2:As_explore_item_id[2]}
+        indices = [map.get(i) for i in indices_descending]
+        items = np.append(As_expoit_item_id, np.array(indices))
         # Get the top k items
-        top_items = indices_descending[:self.nb_positions]
-        
+        top_items = items[:self.nb_positions]
+        #sanity check for Before exploration items have to same for top items values. 
+        assert np.array_equal(As_expoit_item_id, top_items[ :self.nb_positions-self.R])
         return top_items #### [ 7,5 , 8, 1, ]
    
     def update(self, mode:str, dftrain=None):
@@ -265,7 +277,7 @@ class LinearTS:
 
     def update_batch(self, reward_list, context_all):
         print('Before Batch Update ')
-        print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
+        # print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_all)):
             context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
@@ -273,7 +285,7 @@ class LinearTS:
             self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
         print('')
         print('After Batch Update')
-        print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
+        # print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
     def get_arm(self, contexts):
