@@ -8,7 +8,8 @@
 
 import numpy as np
 from random import shuffle
-from math import log
+#from math import log
+import math 
 from bandits_to_rank.tools.tools import swap_full, start_up, newton
 import numpy as np
 from collections import defaultdict
@@ -22,7 +23,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import joblib  # Import joblib
 
 # from utilmy import log, os_makedirs  #confusion between math log and utilmy log 
-from utilmy import os_makedirs  
+from utilmy import (os_makedirs, log)  
 import pandas as pd 
 
 def test2():
@@ -33,12 +34,12 @@ def test2():
     bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
     top_k_list, reward_all_items = bandit.choose_next_arm(contexts)
-    print('Top k items', top_k_list)
-    print('Updating Batch Reward list and context')
+    log('Top k items', top_k_list)
+    log('Updating Batch Reward list and context')
     bandit.reward_model.update_batch(reward_all_items, contexts)
-    print('-------------Complete-----------')
+    log('-------------Complete-----------')
     bandit.save_rewardmodel()
-    print('Reward model save')
+    log('Reward model save')
     
 
 class newBandit:
@@ -124,29 +125,29 @@ class newBandit:
         gamma = self.gamma
 
         A  = np.arange(0, self.n_arms) ### all items
-        print('All item', A)
+        log('All item', A)
         concatenated_array = np.concatenate(reward_list_float, axis=0)
 
         # Get the indices that would sort the concatenated array in descending order
         indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
-        print('Input all reward list', reward_list_float)
-        print('After sorting item id on the basis of best reward', indices_descending)
+        log('Input all reward list', reward_list_float)
+        log('After sorting item id on the basis of best reward', indices_descending)
         # Use the indices to sort the original list of arrays
-        As = [reward_list_float[i] for i in indices_descending]
+        As = [reward_list_float[i] for i in indices_descending] ### As reward
+
         # As_exploit list on the basis df best/highest reward value 
         As_exploit = As[: self.nb_positions - self.R]
         As_explore = As[self.nb_positions - self.R:]
-        As_expoit_item_id = indices_descending[: self.nb_positions - self.R]
+        As_expoit_item_id  = indices_descending[: self.nb_positions - self.R]
         As_explore_item_id = indices_descending[self.nb_positions - self.R:]
         
         
-        print('')
-        print(f'Exploitation reward: {As_exploit} and item id {As_expoit_item_id}')
-        print('')
-        print(f'Expolaration : {self.R}, so the expolaration rewrds {As_explore}')
-        print('Items need to explore',As_explore_item_id)
-        print('')
-        reward_dict = {f'{i}': array for i, array in enumerate(reward_list_float)}
+
+        log(f'\nExploitation reward: {As_exploit} and item id {As_expoit_item_id}')
+        log(f'\nExpolaration : {self.R}, so the expolaration rewrds {As_explore}')
+        log('Items need to explore',As_explore_item_id, "\n")
+
+        # reward_dict = {f'{i}': array for i, array in enumerate(reward_list_float)}
         new_array_list =  []
         #### Add R remaining items by exploration 
         for i in As_explore_item_id:
@@ -228,7 +229,7 @@ class newBandit:
         try:
             self.reward_model = joblib.load(self.reward_model_path)
         except: 
-            print("cannot load, using default ")
+            log("cannot load, using default ")
             self.reward_model =  LinearTS()
 
     def save_rewardmodel(self):
@@ -276,16 +277,16 @@ class LinearTS:
 
 
     def update_batch(self, reward_list, context_all):
-        print('Before Batch Update ')
-        # print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
+        log('Before Batch Update ')
+        # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_all)):
             context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
             self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
-        print('')
-        print('After Batch Update')
-        # print(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
+        log('')
+        log('After Batch Update')
+        # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
     def get_arm(self, contexts):
