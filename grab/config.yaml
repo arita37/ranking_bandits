@@ -46,10 +46,40 @@ simul3:
 #### Goal of reward learning : to predict correct level of reward based on location
 ####   reward_list_pred = model_regression.predict(X= [ loc_id,  real_reward_click ],  )
 
-
-
   agent: 
      agent_uri:   "bandits_to_rank.opponents.grab:GRAB"
+     agent_pars:
+        nb_positions:      3   ###only display top 4
+        gamma:            10
+        reward_model_path: 'ztmp/reward_model/reward_model.joblib '
+  
+
+
+###########################################################################
+simulnew:
+  T: 20 
+
+  ####### ENV probability
+  env_probas: 
+      loc_probas:  
+          0: 0.7         
+          1: 0.2
+
+      item_probas:
+            # locid:   [itemid0, itemid1, itemid3, ...]
+            #0:  [ 0.1, 0.2 , 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95 ]
+            # idx     0     1      2    3     4    5      6
+            0:  [ 0.01, 0.03 , 0.04, 0.05, 0.8, 0.9, 0.95 ]  #### proba of click  for location 0 
+            1:  [ 0.95, 0.9 , 0.8, 0.05, 0.04, 0.03, 0.01 ]  #### proba of click  for location 1 
+
+##### In location 0 : 
+# For location 0 :    Top-3 best item_id are. [ 6, 5,4 ] with click proba  [ 0.95, 0.9, 0.8 ]
+# For location 1 :    Top-3 best item_id are. [ 0, 1, 3 ] with click proba [ 0.95, 0.9, 0.8 ]
+#### Goal of reward learning : to predict correct level of reward based on location
+####   reward_list_pred = model_regression.predict(X= [ loc_id,  real_reward_click ],  )
+
+  agent: 
+     agent_uri:   "algo.newBandit"
      agent_pars:
         nb_positions:      3   ###only display top 4
         gamma:            10
