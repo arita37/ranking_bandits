@@ -187,14 +187,33 @@ class newBandit:
             dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
             dfi['actions']    = action_list    ### list of itemid 
 
+        Issue :
+
+           action_list : List of arm_id ( = itemid) ,  len(action_list) = K
+
+           BUt there are L itemid in total and  L >> K
+             and we update ALL the L items. in update_batch
+
+             Need to reindex the list
+
 
 
         """
         for i in range(0, len(dftrain)):
            #### rewawrd model update
-           reward_list  = dftrain['rwd_list'].values[i]
-           context_list = dftrain['context-x1'].values[i]
-           action_list  = dftrain['action_list'].values[i]
+           reward_list0  = dftrain['rwd_list'].values[i]
+           context_list0 = dftrain['context-x1'].values[i]
+           action_list0  = dftrain['action_list'].values[i]
+
+           #### re-index into list og [0, L-1]
+           reward_list  = [ [] ] *  self.n_arms
+           context_list = [ [] ] *  self.n_arms          
+           for j,action_id in enumerate(action_list0):
+              ix = action_id 
+              reward_list[ ix ]  = reward_list0[i]
+              context_list[ ix ] = context_list0[i]
+
+
            self.reward_model.update_batch(reward_list, context_list)
 
 
@@ -292,10 +311,17 @@ class LinearTS:
         self.f      = [ np.zeros((d, 1)) for i in range(0, self.n_arms) ]
 
 
-    def update_batch(self, reward_list, context_list):
+    def update_batch(self, reward_list:list, context_list):
+        """
+         context_list : list of array(1, dvector) (1 array pe arm)
+         reward_list : list of 0 or 1 (per each arm)
+
+        """
         log('Before Batch Update ')
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
+            if len(context_list)==0: continue 
+
             context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
