@@ -95,13 +95,9 @@ class newBandit:
     def empty(): # to enable pickling
         return 0
 
-    def choose_next_arm(self, Xcontext):
+    def choose_next_arm(self, Xcontext:pd.DataFrame):
         """ 
-
-
-
         """
-
         ## Predict the average reward = [ 0.4, 0.2,  0.5  ]
         reward_all_items = self.reward_model.predict_rewards_float(Xcontext) ### predict Average reward for each item
 
@@ -295,14 +291,17 @@ class LinearTS:
         return np.argmax(sample_reward)
 
 
-    def predict_rewards_float(self, contexts):
+    def predict_rewards_float(self, contexts:list):
         sample_rewards = []
-        for i in range(self.n_arms):
-            
-            context = contexts.reshape(1, -1)
+        for i in range(self.n_arms):            
+            ### contexts : List of numpy array(1, M)    , len(list) = n_arms
+            context = contexts[i]     ### dimension (1,d)
+            # context = context.reshape(1, -1)
+
             print(self.mu_hat[i])
             print('context', context.T.shape)
             mean = (self.mu_hat[i] @ context)[0,0]
+            
             print('Mean', mean)
             print('ppp', np.linalg.inv(self.B[i].shape))
             var  = self.alpha * np.sqrt(context.T @ np.linalg.inv(self.B[i] ) @ context )
