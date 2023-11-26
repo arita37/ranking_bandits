@@ -898,9 +898,9 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
             dd = metrics_add(dd, 'rwd_list',      rwd_list   )
             dd = metrics_add(dd, 'predicted_reward', pred_reward_list)
-            dd = metrics_add(dd, 'regret',        regret    )
-            dd = metrics_add(dd, 'regret_bad_cum',  regret_sum )   #### Worst case  == Linear
-            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )  
+            dd = metrics_add(dd, 'regret',           regret    )
+            dd = metrics_add(dd, 'regret_bad_cum',   regret_sum )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_ratio',     regret_ratio    )  
         # collecting data on the basis of context
         df_collect = pd.concat((df_collect, env_df)).reset_index(drop = True)  #concat dataframe
         try:
