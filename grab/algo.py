@@ -16,7 +16,7 @@ from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
 import os
 import pickle
-from sklearn.ensemble import RandomForestClassifier
+# from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -33,6 +33,7 @@ def test2():
     gamma = 0.1
     bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
+    print(contexts)
     top_k_list, reward_all_items = bandit.choose_next_arm(contexts)
     log('Top k items', top_k_list)
     log('Updating Batch Reward list and context')
@@ -230,7 +231,7 @@ class newBandit:
             self.reward_model = joblib.load(self.reward_model_path)
         except: 
             log("cannot load, using default ")
-            self.reward_model =  LinearTS()
+            self.reward_model =  LinearTS(self.n_arms, self.nb_positions)
 
     def save_rewardmodel(self):
         os_makedirs(self.reward_model_path)
@@ -297,8 +298,13 @@ class LinearTS:
     def predict_rewards_float(self, contexts):
         sample_rewards = []
         for i in range(self.n_arms):
-            context = contexts[i].reshape(-1, 1)
-            mean = (self.mu_hat[i].T @ context)[0,0]
+            
+            context = contexts.reshape(1, -1)
+            print(self.mu_hat[i])
+            print('context', context.T.shape)
+            mean = (self.mu_hat[i] @ context)[0,0]
+            print('Mean', mean)
+            print('ppp', np.linalg.inv(self.B[i].shape))
             var  = self.alpha * np.sqrt(context.T @ np.linalg.inv(self.B[i] ) @ context )
             sample_reward = np.random.normal(mean, var)
             sample_rewards.append(sample_reward)

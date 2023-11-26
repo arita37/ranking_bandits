@@ -187,9 +187,9 @@ from box import Box
 import math
 from utilmy import (log, os_makedirs, config_load, json_save, pd_to_file, pd_read_file,
 date_now, load_function_uri, glob_glob)
+from algo import newBandit
 
-
-from bandits_to_rank.opponents.grab import GRAB
+# from bandits_to_rank.opponents.grab import GRAB
 
 def log3(*s):
     if os.environ.get('debug', "") == "1":
@@ -820,6 +820,13 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     regret_bad_cum = 0
     dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
     print('DF_STAT', dfstat)
+    n_arms = 5
+    nb_positions =5
+    T = 10 
+    gamma = 0.1
+    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
+    contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
+    
     #### for each location: a New bandit optimizer
     for loc_id in range(cc.loc_id_all):
 
@@ -832,8 +839,9 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         
         # log("\n#### Init New Agent ")
         agent_pars['T']       = len(dfg)      ## Correct T 
-        agent_pars['nb_arms'] = cc.n_item_all ## Correct                
+        agent_pars['n_arms'] = cc.n_item_all ## Correct                
         agentClass = load_function_uri(agent_uri)
+        print(agent_pars)
         agent      = agentClass(**agent_pars)
         cc.agent_pars = agent_pars        
         # agent = GRAB(**agent_pars)
@@ -843,9 +851,10 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         nstep_train = 200 ## maximum size of training data
         n_item      = cc.n_item_all
         for t in range(0, len(dfg)):
-
+            print('loc id', dfg['itemid_clk'][t].shape)
             # Return One action :  1 full list of item_id  to be Displayed
-            action_list, _ = agent.choose_next_arm()
+            action_list, reward_all_items = agent.choose_next_arm(dfg['itemid_clk'][t])
+            # action_list, _ = agent.choose_next_arm()
 
             #### ENV reward / clk 
             itemid_imp = dfg['itemid_list'].values[t]
