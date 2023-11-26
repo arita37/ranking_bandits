@@ -180,12 +180,30 @@ class newBandit:
         assert np.array_equal(As_expoit_item_id, top_items[ :self.nb_positions-self.R])
         return top_items #### [ 7,5 , 8, 1, ]
    
-    def update(self, mode:str, dftrain=None):
-        """ GRAB model parameters are updated HERE
+    def update(self, mode:str, dftrain:pd.DataFrame=None):
+        """ Update reward model and topk predict list model
+            dftrain
+            dfi['y']          = rwd_list       ### list size is L-items (ie all the items)
+            dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
+            dfi['actions']    = action_list    ### list of itemid 
+
+
 
         """
-        #  model_save_path = 'random_forest_model.joblib'
-        
+        for i in range(0, len(dftrain)):
+           #### rewawrd model update
+           reward_list  = dftrain['y'].values[i]
+           context_list = dftrain['context-x1'].values[i]
+           self.reward_model.update_batch(reward_list, context_list)
+
+
+
+        #### topk rank list update:
+        ## this model does not need any update, because it computes online at prediction.
+        ## State of the model is Fixed :   
+
+
+
 
     def save(self, dirout):
         os.makedirs(dirout, exist_ok=True)
@@ -273,16 +291,16 @@ class LinearTS:
         self.f      = [ np.zeros((d, 1)) for i in range(0, self.n_arms) ]
 
 
-    def update_batch(self, reward_list, context_all):
+    def update_batch(self, reward_list, context_list):
         log('Before Batch Update ')
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
-        for i_arm, (reward, context) in enumerate( zip(reward_list, context_all)):
+        for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
             context = context.reshape(-1, 1)
             self.B[i_arm] += context @ context.T
             self.f[i_arm] += reward * context
             self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
-        log('')
-        log('After Batch Update')
+
+        log('\nAfter Batch Update: ', i_arm)
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
