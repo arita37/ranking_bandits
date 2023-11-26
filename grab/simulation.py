@@ -802,15 +802,15 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
     cc = Box({})
     
-    log("### ENV Setup ")
+    log("### ENV Setup #######################")
     cc.n_item_all = len(df['item_id'].unique())
     cc.loc_id_all = len(df['loc_id'].unique())
     cc.nrows      = len(df)
     log(dfstat)
 
 
-    log("### Agent Setup ")
-    agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
+    log("### Agent Setup #####################")
+    agent_uri   = cfg1['agent'].get('agent_uri', "algo:newBandit" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     # agents=[]
     n_arms       = 5
