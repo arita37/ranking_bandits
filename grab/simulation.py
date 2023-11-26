@@ -802,12 +802,14 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
     cc = Box({})
     
-    ### ENV Setup
+    log("### ENV Setup ")
     cc.n_item_all = len(df['item_id'].unique())
     cc.loc_id_all = len(df['loc_id'].unique())
     cc.nrows      = len(df)
-    
-    ### Agent Setup
+    log(dfstat)
+
+
+    log("### Agent Setup ")
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     # agents=[]
@@ -815,9 +817,17 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     nb_positions = 5
     T            = 10 
     gamma        = 0.1
+    dvector     = 4 ### size of embedding vector
+    nstep_train = 200 ## maximum size of training data
 
-    dvector  = 4 ### size of embedding vector
- 
+    log("\n#### Init Agent for all loc_id ")
+    agent_pars['T']      = T      ## Correct T 
+    agent_pars['n_arms'] = cc.n_item_all ## Correct                
+    agentClass = load_function_uri(agent_uri)
+    agent         = agentClass(**agent_pars)
+    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
+    cc.agent_pars = agent_pars        
+    log(agent_pars)    
 
 
 
@@ -826,18 +836,6 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     regret_sum     = 0
     regret_bad_cum = 0
     dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
-    print('DF_STAT', dfstat)
-    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
-    # contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
-
-    log("\n#### Init Agent for all loc_id ")
-    agent_pars['T']      = T      ## Correct T 
-    agent_pars['n_arms'] = cc.n_item_all ## Correct                
-    agentClass = load_function_uri(agent_uri)
-    agent         = agentClass(**agent_pars)
-    cc.agent_pars = agent_pars        
-    log(agent_pars)    
-
 
 
     log("\n##### Start Simul  ")
@@ -853,7 +851,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         
 
         #### Run simulation  #####################################
-        nstep_train = 200 ## maximum size of training data
+
         n_item      = cc.n_item_all
         for t in range(0, len(env_df)):
             print('loc id', env_df['itemid_clk'][t].shape)
