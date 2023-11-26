@@ -199,6 +199,8 @@ class newBandit:
 
 
         """
+
+        ##### Update reward model only  #################################
         for i in range(0, len(dftrain)):
            #### rewawrd model update
            reward_list0  = dftrain['rwd_list'].values[i]
@@ -218,7 +220,7 @@ class newBandit:
 
 
 
-        #### topk rank list update:
+        #### topk rank list update: ####################################
         ## this model does not need any update, because it computes online at prediction.
         ## State of the model is Fixed :   
 
