@@ -206,7 +206,7 @@ class newBandit:
            action_list0  = dftrain['action_list'].values[i]
 
            #### re-index into list og [0, L-1]
-           reward_list  = [ [] ] *  self.n_arms
+           reward_list  = [ 0 ]  *  self.n_arms
            context_list = [ [] ] *  self.n_arms          
            for j,action_id in enumerate(action_list0):
               ix = action_id 
