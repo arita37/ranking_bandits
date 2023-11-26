@@ -192,8 +192,9 @@ class newBandit:
         """
         for i in range(0, len(dftrain)):
            #### rewawrd model update
-           reward_list  = dftrain['y'].values[i]
+           reward_list  = dftrain['rwd_list'].values[i]
            context_list = dftrain['context-x1'].values[i]
+           action_list  = dftrain['action_list'].values[i]
            self.reward_model.update_batch(reward_list, context_list)
 
 

@@ -877,7 +877,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             #######################################################################
             ### Build historical train : at each time step t, 1 full List : reward, action and context
             dfi = pd.DataFrame()
-            dfi['y']          = rwd_list       ### list size is L-items (ie all the items)
+            dfi['rw_list']    = rwd_list       ### list size is L-items (ie all the items)
             dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
             dfi['actions']    = action_list    ### list of itemid 
             dftrain = pd.concat(( dfi, dftrain))  
