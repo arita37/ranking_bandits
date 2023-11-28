@@ -328,7 +328,6 @@ def train_grab(cfg,name='simul', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             agent.update2([loc_id], action_list, rwd_list, False)
             if len(action_lst) % BATCH_SIZE == 0:
                 agent.update2(context, action_lst, reward_lst, True)
-                # print(action_lst, reward_lst)
             dd = metrics_add(dd, 'action_list',   action_list)
             dd = metrics_add(dd, 'rwd_best',      rwd_best    )
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
@@ -418,15 +417,11 @@ def run2(cfg:str="config.yaml", name='simul2', dirout='ztmp/exp/', T=1000, nsimu
     dt = date_now(fmt="%Y%m%d_%H%M")
     dirout2 = dirout + f"/{dt}_T{T}"
     # cfg0    = config_load(cfg)
-
-    print('Name', name )
-    print(cfg)
     for i in range(nsimul):
         dirouti = f"{dirout2}/sim{i}"
-        print(dirouti)
         df      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
-        print(df)
+    
         train_grab2(cfg, name, df, K=K, dirout=dirouti)
 
 
@@ -529,8 +524,7 @@ def train_grab2(cfg,name='simul2', df:pd.DataFrame=None, K=10, dirout="ztmp/"):
             if len(action_lst) % BATCH_SIZE == 0:
                 # agent.update2(context, action_lst, reward_lst, mode='train')
                 agent.update2(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
-                # print(action_lst, reward_lst)
-
+            
             #agent.update2([loc_id], action_list, rwd_list, mode='predict')
             agent.update2(mode='use_reward_model', dftrain = dfi)  ## Only update Grab model
 
@@ -641,7 +635,7 @@ def train_grab3(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     regret_sum = 0
     regret_bad_cum = 0
     dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
-    print('DF_STAT', dfstat)
+
     #### for each location: a New bandit optimizer
     for loc_id in range(cc.loc_id_all):
 
@@ -837,6 +831,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     dd = {}
     regret_sum     = 0
     regret_bad_cum = 0
+    nstep_train = 200
     dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
 
 
@@ -851,7 +846,6 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         env_df['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
         log('\n#### Simul data \n', env_df[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
         
-
         #### Run simulation  #####################################
 
         n_item      = cc.n_item_all
@@ -859,7 +853,6 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             # Return One action :  1 full list of item_id  to be Displayed
             Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
             action_list, pred_reward_list = agent.choose_next_arm( Xcontext_list )
-
 
             #### ENV reward / clk 
             itemid_imp = env_df['itemid_list'].values[t]
@@ -876,10 +869,9 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             ### Build historical train : at each time step t, 1 full List : reward, action and context
             dfi = pd.DataFrame()
             dfi['y']          = rwd_list       ### list size is L-items (ie all the items)
-            dfi['context-x1'] = loc_id  ### list of Array(1, dvector)
+            dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
             dfi['actions']    = action_list    ### list of itemid 
             dftrain = pd.concat(( dfi, dftrain))  
-            
             #### Rolling window, only keep most recent.
             dftrain = dftrain.iloc[:nstep_train,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
 
@@ -891,7 +883,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
             ####### Metrics ###################################################  
             dd = metrics_add(dd, 'context', loc_id)
-            dd = metrics_add(dd, 'action_list',   action_list)
+            dd = metrics_add(dd, 'action_list',   Xcontext_list)
             dd = metrics_add(dd, 'rwd_best',      rwd_best    )
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
             dd = metrics_add(dd, 'rwd_list',      rwd_list   )
@@ -1121,7 +1113,6 @@ def zz_train_grab(cfg, df, K, dirout="ztmp/"):
             if len(action_lst) % 2 == 0:
                 agent.update2(action_lst, reward_lst)
         # agent.update( action_lst, reward_lst)
-        print(action_lst, reward_lst)
         diroutk = f"{dirout}/agent_{loc_id}/"
         os_makedirs(diroutk)
         agent.save(diroutk)

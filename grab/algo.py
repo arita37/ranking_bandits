@@ -179,7 +179,8 @@ class newBandit:
         top_items = items[:self.nb_positions]
         #sanity check for Before exploration items have to same for top items values. 
         assert np.array_equal(As_expoit_item_id, top_items[ :self.nb_positions-self.R])
-        return top_items #### [ 7,5 , 8, 1, ]
+        log('all items after TS model ', items)
+        return items #### [ 7,5 , 8, 1, ]
    
     def update(self, mode:str, dftrain:pd.DataFrame=None):
         """ Update reward model and topk predict list model
@@ -202,22 +203,24 @@ class newBandit:
         """
 
         ##### Update reward model only  #################################
-        for i in range(0, len(dftrain)):
-           #### rewawrd model update
-           reward_list0  = dftrain['rwd_list'].values[i]
-           context_list0 = dftrain['context-x1'].values[i]
-           action_list0  = dftrain['action_list'].values[i]
+        dftrain.to_csv('dftrain.csv')
+        outer_loop = int(len(dftrain)/self.n_arms)
+        for k in range(outer_loop):
+            for i in range(0, self.n_arms):
+            #### rewawrd model update
+                reward_list  = [ 0 ]  *  self.n_arms
+                context_list = [ [] ] *  self.n_arms
+                reward_list0 = dftrain['y'][i].values
+                context_list0 = dftrain['context-x1'][i].values
+                action_list0 = dftrain['actions'][i].values
+            #### re-index into list og [0, L-1]    
+                for j,action_id in enumerate(list(action_list0)):
+                    ix = action_id 
+                    reward_list[ ix ]  = reward_list0[j]
+                    context_list[ ix ] = context_list0[j]
 
-           #### re-index into list og [0, L-1]
-           reward_list  = [ 0 ]  *  self.n_arms
-           context_list = [ [] ] *  self.n_arms          
-           for j,action_id in enumerate(action_list0):
-              ix = action_id 
-              reward_list[ ix ]  = reward_list0[i]
-              context_list[ ix ] = context_list0[i]
 
-
-           self.reward_model.update_batch(reward_list, context_list)
+                self.reward_model.update_batch(i, reward_list0, context_list0)
 
 
 
@@ -314,7 +317,7 @@ class LinearTS:
         self.f      = [ np.zeros((d, 1)) for i in range(0, self.n_arms) ]
 
 
-    def update_batch(self, reward_list:list, context_list):
+    def update_batch(self, index:int, reward_list:list, context_list:np.array):
         """
          context_list : list of array(1, dvector) (1 array pe arm)
          reward_list : list of 0 or 1 (per each arm)
@@ -323,14 +326,13 @@ class LinearTS:
         log('Before Batch Update ')
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
         for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
-            if len(context_list)==0: continue 
+            if len(context_list)==0:
+                pass   
+            self.B[index] += context @ context.T
+            self.f[index] += reward.T * context.T
+            self.mu_hat[index]    = np.linalg.inv(self.B[index]) @ self.f[index]
 
-            context = context.reshape(-1, 1)
-            self.B[i_arm] += context @ context.T
-            self.f[i_arm] += reward * context
-            self.mu_hat[i_arm]    = np.linalg.inv(self.B[i_arm]) @ self.f[i_arm]
-
-        log('\nAfter Batch Update: ', i_arm)
+        log('\nAfter Batch Update: ', index)
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
