@@ -799,13 +799,15 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     cfg1 = cfg0[name]
     cc = Box({})
     
-    ### ENV Setup
+    log("### ENV Setup #######################")
     cc.n_item_all = len(df['item_id'].unique())
     cc.loc_id_all = len(df['loc_id'].unique())
     cc.nrows      = len(df)
-    
-    ### Agent Setup
-    agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
+    log(dfstat)
+
+
+    log("### Agent Setup #####################")
+    agent_uri   = cfg1['agent'].get('agent_uri', "algo:newBandit" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     # agents=[]
     T            = 10 
@@ -825,9 +827,17 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     agent_pars['n_arms'] = cc.n_item_all ## Correct                
     agentClass = load_function_uri(agent_uri)
     agent         = agentClass(**agent_pars)
+    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     cc.agent_pars = agent_pars        
     log(agent_pars)    
 
+
+
+    ### Metrics
+    dd = {}
+    regret_sum     = 0
+    regret_bad_cum = 0
+    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
 
 
     log("\n##### Start Simul  ")
@@ -843,7 +853,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         
 
         #### Run simulation  #####################################
-        nstep_train = 200 ## maximum size of training data
+
         n_item      = cc.n_item_all
         for t in range(0, len(env_df)):
             # Return One action :  1 full list of item_id  to be Displayed
@@ -886,9 +896,9 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
             dd = metrics_add(dd, 'rwd_list',      rwd_list   )
             dd = metrics_add(dd, 'predicted_reward', pred_reward_list)
-            dd = metrics_add(dd, 'regret',        regret    )
-            dd = metrics_add(dd, 'regret_bad_cum',  regret_sum )   #### Worst case  == Linear
-            dd = metrics_add(dd, 'regret_ratio',        regret_ratio    )  
+            dd = metrics_add(dd, 'regret',           regret    )
+            dd = metrics_add(dd, 'regret_bad_cum',   regret_sum )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_ratio',     regret_ratio    )  
         # collecting data on the basis of context
         df_collect = pd.concat((df_collect, env_df)).reset_index(drop = True)  #concat dataframe
         try:
