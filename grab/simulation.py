@@ -380,7 +380,6 @@ def rwd_sum_intersection( action_list,  itemid_list,  itemid_clk, n_item_all=10 
          rwdi       = itemid_clk[idx]
          reward_sum = reward_sum + rwdi       ## Check if this itemid was clicked.  
          reward_list.append(rwdi)
-
     return reward_sum, reward_list
 
 
@@ -798,8 +797,6 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     BATCH_SIZE = 4   
     cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
     cfg1 = cfg0[name]
-    
-
     cc = Box({})
     
     ### ENV Setup
@@ -811,22 +808,15 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     agent_uri   = cfg1['agent'].get('agent_uri', "bandits_to_rank.opponents.grab:GRAB" )
     agent_pars  = cfg1['agent'].get('agent_pars', {} )
     # agents=[]
-    n_arms       = 5
-    nb_positions = 5
     T            = 10 
-    gamma        = 0.1
-
-    dvector  = 4 ### size of embedding vector
+    dvector      = 5 ### size of embedding vector
  
-
-
 
     ### Metrics
     dd = {}
     regret_sum     = 0
     regret_bad_cum = 0
-    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
-    print('DF_STAT', dfstat)
+    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histoy
     # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     # contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
 
@@ -856,10 +846,8 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         nstep_train = 200 ## maximum size of training data
         n_item      = cc.n_item_all
         for t in range(0, len(env_df)):
-            print('loc id', env_df['itemid_clk'][t].shape)
-
             # Return One action :  1 full list of item_id  to be Displayed
-            Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, n_arms) ]
+            Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
             action_list, pred_reward_list = agent.choose_next_arm( Xcontext_list )
 
 
@@ -878,7 +866,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             ### Build historical train : at each time step t, 1 full List : reward, action and context
             dfi = pd.DataFrame()
             dfi['y']          = rwd_list       ### list size is L-items (ie all the items)
-            dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
+            dfi['context-x1'] = loc_id  ### list of Array(1, dvector)
             dfi['actions']    = action_list    ### list of itemid 
             dftrain = pd.concat(( dfi, dftrain))  
             
@@ -925,10 +913,9 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     diroutk = f"{dirout}/agent"
     os_makedirs(diroutk)
     agent.save(diroutk)
-    agents.append(agent)
     log(diroutk)
 
-    return agents
+    return agent
 
 
 

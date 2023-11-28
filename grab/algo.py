@@ -141,7 +141,7 @@ class newBandit:
         
 
         log(f'\nExploitation reward: {As_exploit} and item id {As_expoit_item_id}')
-        log(f'\nExpolaration : {self.R}, so the expolaration rewrds {As_explore}')
+        log(f'\nExpolaration : {len(As_explore)}, so the expolaration rewrds {As_explore}')
         log('Items need to explore',As_explore_item_id, "\n")
 
         # reward_dict = {f'{i}': array for i, array in enumerate(reward_list_float)}
@@ -157,13 +157,14 @@ class newBandit:
                 imax = np.argmax(Aneg)
                 # Calculate Plist based on exploration 
                 if i != imax : 
-                    Plist[u] = np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0)  
+                    Plist[u] = abs(np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0))  
                 else: 
-                    Plist[u] = 1 - np.sum(Aneg)
+                    Plist[u] = abs(1 - np.sum(Aneg))
                     
             # Sample from Plist to select an item for exploration
             # Normalize Plist to ensure probabilities sum to 1
-            Plist_normalized = Plist / np.sum(Plist)
+
+            Plist_normalized = abs(Plist) / np.sum(Plist)
             sample = ([[np.random.choice(Aneg, size=1, p=Plist_normalized, replace=True)]])
             
             # Update As_exploit by adding the sampled item
@@ -171,7 +172,7 @@ class newBandit:
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(np.array(new_array_list).flatten())[::-1]
         #mapping the orginal reward array index to sorted reward array index which is obtained from exploration
-        map = {0:As_explore_item_id[0], 1:As_explore_item_id[1], 2:As_explore_item_id[2]}
+        map = {0:As_explore_item_id[0], 1:As_explore_item_id[1], 2:As_explore_item_id[2], 3:As_explore_item_id[3], 4: As_explore_item_id[4]}
         indices = [map.get(i) for i in indices_descending]
         items = np.append(As_expoit_item_id, np.array(indices))
         # Get the top k items
@@ -296,23 +297,11 @@ class LinearTS:
         for i in range(self.n_arms):            
             ### contexts : List of numpy array(1, M)    , len(list) = n_arms
             context = contexts[i]     ### dimension (1,d)
-            # context = context.reshape(1, -1)
-
-            print(self.mu_hat[i])
-            print('context', context.T.shape)
             mean = (self.mu_hat[i] @ context)[0,0]
-            
-            print('Mean', mean)
-            print('ppp', np.linalg.inv(self.B[i].shape))
-            var  = self.alpha * np.sqrt(context.T @ np.linalg.inv(self.B[i] ) @ context )
+            var  = self.alpha * np.sqrt(context @ np.linalg.inv(self.B[i] ) @ context.T )
             sample_reward = np.random.normal(mean, var)
             sample_rewards.append(sample_reward)
         return sample_rewards
-
-
-
-
-
 
 if __name__ == "__main__":
     import fire 
