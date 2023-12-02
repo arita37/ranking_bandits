@@ -95,6 +95,7 @@ class newBandit:
     def empty(): # to enable pickling
         return 0
 
+
     def choose_next_arm(self, Xcontext:pd.DataFrame):
         """ 
         """
@@ -181,7 +182,8 @@ class newBandit:
         assert np.array_equal(As_expoit_item_id, top_items[ :self.nb_positions-self.R])
         log('all items after TS model ', items)
         return items #### [ 7,5 , 8, 1, ]
-   
+
+
     def update(self, mode:str, dftrain:pd.DataFrame=None):
         """ Update reward model and topk predict list model
             dftrain
@@ -227,8 +229,6 @@ class newBandit:
         #### topk rank list update: ####################################
         ## this model does not need any update, because it computes online at prediction.
         ## State of the model is Fixed :   
-
-
 
 
     def save(self, dirout):

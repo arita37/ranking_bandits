@@ -820,18 +820,20 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     agent_pars['T']      = T      ## Correct T 
     agent_pars['n_arms'] = cc.n_item_all ## Correct                
     agentClass = load_function_uri(agent_uri)
-    agent         = agentClass(**agent_pars)
+    agent      = agentClass(**agent_pars)
     # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     cc.agent_pars = agent_pars        
     log(agent_pars)    
 
+    def context_get(t):
+        Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
+        return Xcontext_list  
 
-
-    ### Metrics
+    ####### Metrics
     dd = {}
     regret_sum     = 0
     regret_bad_cum = 0
-    nstep_train = 200
+    nstep_train    = 200
     dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
 
 
@@ -846,12 +848,12 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         env_df['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
         log('\n#### Simul data \n', env_df[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
         
+        
         #### Run simulation  #####################################
-
         n_item      = cc.n_item_all
         for t in range(0, len(env_df)):
             # Return One action :  1 full list of item_id  to be Displayed
-            Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
+            Xcontext_list  = context_get(t)
             action_list, pred_reward_list = agent.choose_next_arm( Xcontext_list )
 
             #### ENV reward / clk 
@@ -872,12 +874,12 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
             dfi['actions']    = action_list    ### list of itemid 
             dftrain = pd.concat(( dfi, dftrain))  
-            #### Rolling window, only keep most recent.
-            dftrain = dftrain.iloc[:nstep_train,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
-
-          
+            
+            
             #### Using Reward Learning from dynamic Context ###################
-            if len(dftrain) % BATCH_SIZE == 0:
+            if t % BATCH_SIZE == 0:
+                #### Rolling window, only keep most recent.
+                dftrain = dftrain.iloc[:BATCH_SIZE,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
                 agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
 
 
@@ -891,6 +893,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             dd = metrics_add(dd, 'regret',           regret    )
             dd = metrics_add(dd, 'regret_bad_cum',   regret_sum )   #### Worst case  == Linear
             dd = metrics_add(dd, 'regret_ratio',     regret_ratio    )  
+            
         # collecting data on the basis of context
         df_collect = pd.concat((df_collect, env_df)).reset_index(drop = True)  #concat dataframe
         try:
