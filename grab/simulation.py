@@ -825,9 +825,14 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     cc.agent_pars = agent_pars        
     log(agent_pars)    
 
-    def context_get(t):
-        Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
+
+    def context_get(t, loc_id):
+        one_hot         = np.zeros(2) ## one hot
+        one_hot[loc_id] = 1
+        Xcontext_list   = [  one_hot for i in range(0, agent_pars['n_arms']) ]
+        # Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
         return Xcontext_list  
+
 
     ####### Metrics
     dd = {}
@@ -853,7 +858,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         n_item      = cc.n_item_all
         for t in range(0, len(env_df)):
             # Return One action :  1 full list of item_id  to be Displayed
-            Xcontext_list  = context_get(t)
+            Xcontext_list  = context_get(t, loc_id )
             action_list, pred_reward_list = agent.choose_next_arm( Xcontext_list )
 
             #### ENV reward / clk 
