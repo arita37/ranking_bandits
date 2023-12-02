@@ -1,3 +1,5 @@
+
+```python
 #To run model 
 python algo.py test2
 
@@ -82,6 +84,13 @@ Reward model save
 
 
 
+
+
+
+
+
+
+
 --------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------
 All item [0 1 2 3 4 5 6]
@@ -156,6 +165,8 @@ Exploitation reward: [array([[0.73434248]]), array([[0.71858272]])] and item id 
 Expolaration : 5, so the expolaration rewrds [array([[0.41890078]]), array([[-0.07374619]]), array([[-0.14536724]]), array([[-0.34500468]]), array([[-0.56193254]])]
 Items need to explore [6 0 5 4 1] 
 
+
+
 metric creation dataframe     ts            itemid_list             itemid_clk  ...  regret regret_bad_cum  regret_ratio
 0    0  [0, 1, 2, 3, 4, 5, 6]  [0, 0, 0, 1, 0, 1, 1]  ...     0.0            0.0           0.0
 1    1  [0, 1, 2, 3, 4, 5, 6]  [0, 0, 0, 0, 1, 1, 1]  ...     0.0            0.0           0.0
@@ -200,6 +211,8 @@ metric creation dataframe     ts            itemid_list             itemid_clk  
 17         2         2.0         0.0             0.0           0.0
 18         3         3.0         0.0             0.0           0.0
 19         3         3.0         0.0             0.0           0.0
+
+
 ztmp/exp//20231128_2220_T10/sim0/metrics/simul_metrics.csv
     ts    itemid_list     itemid_clk  context  ... rwd_actual_cum  regret_cum  regret_bad_cum_cum regret_ratio_cum
 0    0  0,1,2,3,4,5,6  0,0,0,1,0,1,1        0  ...            3.0         0.0                 0.0              0.0
@@ -222,4 +235,8 @@ ztmp/exp//20231128_2220_T10/sim0/metrics/simul_metrics.csv
 17   7  0,1,2,3,4,5,6  1,0,1,0,0,0,0        1  ...           47.0         0.0                 0.0              0.0
 18   8  0,1,2,3,4,5,6  1,1,1,0,0,0,0        1  ...           50.0         0.0                 0.0              0.0
 19   9  0,1,2,3,4,5,6  1,1,1,0,0,0,0        1  ...           53.0         0.0                 0.0              0.0
+
+
+```
+
 
