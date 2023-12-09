@@ -173,7 +173,7 @@ class newBandit:
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(np.array(new_array_list).flatten())[::-1]
         #mapping the orginal reward array index to sorted reward array index which is obtained from exploration
-        map = {0:As_explore_item_id[0], 1:As_explore_item_id[1], 2:As_explore_item_id[2], 3:As_explore_item_id[3], 4: As_explore_item_id[4]}
+        map = {0:As_explore_item_id[0]}
         indices = [map.get(i) for i in indices_descending]
         items = np.append(As_expoit_item_id, np.array(indices))
         # Get the top k items
@@ -212,9 +212,9 @@ class newBandit:
             #### rewawrd model update
                 reward_list  = [ 0 ]  *  self.n_arms
                 context_list = [ [] ] *  self.n_arms
-                reward_list0 = dftrain['y'][i].values
-                context_list0 = dftrain['context-x1'][i].values
-                action_list0 = dftrain['actions'][i].values
+                reward_list0 = dftrain['y'][i]
+                context_list0 = dftrain['context-x1'][i]
+                action_list0 = dftrain['actions'][i]
             #### re-index into list og [0, L-1]    
                 for j,action_id in enumerate(list(action_list0)):
                     ix = action_id 
@@ -325,12 +325,16 @@ class LinearTS:
         """
         log('Before Batch Update ')
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
-        for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
-            if len(context_list)==0:
-                pass   
-            self.B[index] += context @ context.T
-            self.f[index] += reward.T * context.T
-            self.mu_hat[index]    = np.linalg.inv(self.B[index]) @ self.f[index]
+        # for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
+        #     if len(context_list)==0:
+        #         pass  
+        
+        context = context_list.reshape(-1, 1)
+        print('list ',context.shape) 
+        print('aaaa ', reward_list.shape)
+        self.B[index] += context_list @ context_list.T
+        self.f[index] += reward_list.T * context_list.T
+        self.mu_hat[index]    = np.linalg.inv(self.B[index]) @ self.f[index]
 
         log('\nAfter Batch Update: ', index)
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
@@ -345,7 +349,10 @@ class LinearTS:
         sample_rewards = []
         for i in range(self.n_arms):            
             ### contexts : List of numpy array(1, M)    , len(list) = n_arms
-            context = contexts[i]     ### dimension (1,d)
+            context = contexts[i].reshape(1, -1)    ### dimension (1,d)
+            print('context : ', context.shape)
+            print('mu hat shape : ', self.mu_hat[i].shape)
+            print('np.linalg.inv(self.B[i]) shape : ', np.linalg.inv(self.B[i]).shape)
             mean = (self.mu_hat[i] @ context)[0,0]
             var  = self.alpha * np.sqrt(context @ np.linalg.inv(self.B[i] ) @ context.T )
             sample_reward = np.random.normal(mean, var)

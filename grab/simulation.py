@@ -754,7 +754,6 @@ def run4(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimu
     dirout2 = dirout + f"/{dt}_T{T}"
     # cfg0    = config_load(cfg)
 
-
     for i in range(nsimul):
         dirouti = f"{dirout2}/sim{i}"
         df, dfstat      = generate_click_data2(cfg= cfg, name=name, T=T, 
@@ -818,10 +817,10 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
     log("\n#### Init Agent for all loc_id ")
     agent_pars['T']      = T      ## Correct T 
-    agent_pars['n_arms'] = cc.n_item_all ## Correct                
+    agent_pars['n_arms'] = cc.loc_id_all ## Correct                
     agentClass = load_function_uri(agent_uri)
+    print(agent_pars)
     agent      = agentClass(**agent_pars)
-    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
     cc.agent_pars = agent_pars        
     log(agent_pars)    
 
@@ -852,7 +851,6 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         env_df.columns = ['ts', 'itemid_list' ]
         env_df['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
         log('\n#### Simul data \n', env_df[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
-        
         
         #### Run simulation  #####################################
         n_item      = cc.n_item_all
@@ -885,7 +883,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             if t % BATCH_SIZE == 0:
                 #### Rolling window, only keep most recent.
                 dftrain = dftrain.iloc[:BATCH_SIZE,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
-                agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
+                # agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
 
 
             ####### Metrics ###################################################  
@@ -1064,7 +1062,6 @@ def zz_generate_click_data(cfg: str, T: int, dirout='data_simulation.csv'):
     if dirout is not None:
         df.to_csv(dirout, index=False)
     return df
-
 
 
 def zz_train_grab(cfg, df, K, dirout="ztmp/"):
