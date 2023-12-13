@@ -305,6 +305,11 @@ class LinearTS:
           using Bayesian sampling :
              m(k) = Normal( mu_k, var_k )
 
+         d: size of embedding :
+            2 locations.
+                --> 10 arms
+
+
 
     """
     def __init__(self, n_arms, d, alpha=1.0):
@@ -346,6 +351,30 @@ class LinearTS:
 
 
     def predict_rewards_float(self, contexts:list):
+        """
+         Location is fixed at each step
+
+          contexts =[      ### size 10 : 10 arms
+               [1,0],  ## one encoding of location. [1,0]. OR [0,1]
+               [1,0],
+               ...
+
+               [1,0]
+          ]
+
+
+          
+
+            mu_hat[i] = np.zeros((d, 1))     d=2 
+            (self.mu_hat[i] @ context)[0,0]
+            ipython or jupyter in vscode 
+
+            Rewardn == Normal_Distribution(mean, variance)
+              --> sample from the distribution.
+
+              
+
+        """
         sample_rewards = []
         for i in range(self.n_arms):            
             ### contexts : List of numpy array(1, M)    , len(list) = n_arms
