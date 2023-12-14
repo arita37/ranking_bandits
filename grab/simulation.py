@@ -783,7 +783,8 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
     We will another model called: Thompsom Sampling.
 
-    
+
+    n_arms = 10
 
 
     """ 
@@ -817,7 +818,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
     log("\n#### Init Agent for all loc_id ")
     agent_pars['T']      = T      ## Correct T 
-    agent_pars['n_arms'] = cc.loc_id_all ## Correct                
+    agent_pars['n_arms'] = cc.n_item_all      ## cc.loc_id_all ## Correct                
     agentClass = load_function_uri(agent_uri)
     print(agent_pars)
     agent      = agentClass(**agent_pars)
