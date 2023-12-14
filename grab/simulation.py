@@ -1049,7 +1049,7 @@ def train_grab5(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
 
             #### ENV reward / clk 
             itemid_imp = env_df['itemid_list'].values[t]
-            itemid_clk = env_df['itemid_clk' ].values[t]
+            itemid_clk = env_df['itemid_clk' ].values[t]   
 
             rwd_best             = np.sum( itemid_clk )   ### All Clicks               
             rwd_actual, rwd_list = rwd_sum_intersection( action, itemid_imp, itemid_clk,)
