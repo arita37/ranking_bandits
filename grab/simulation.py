@@ -944,8 +944,24 @@ def run5(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimu
         dirouti = f"{dirout2}/sim{i}"
         df, dfstat      = generate_click_data2(cfg= cfg, name=name, T=T, 
                                        dirout= dirouti + f"/data/df_simul_{i}.csv")
-        train_grab5(cfg, name, df, dfstat, K=K, dirout=dirouti)
+        agent = train_grab5(cfg, name, df, dfstat, K=K, dirout=dirouti)
+        #Testing agents 
+        
+        action, pred_reward_list = agent.choose_next_arm(context_get(0, 0, 7))
+        print(f'Actions {action} and its location is 0')
+        action, pred_reward_list = agent.choose_next_arm(context_get(0, 1, 7))
+        print(f'Actions {action} and its location is 1')
 
+def context_get(t, loc_id, agent_pars):
+        one_hot         = np.zeros(2) ## one hot
+        one_hot[loc_id] = 1
+        try:
+            item = agent_pars['n_arms'] 
+        except:
+            item = agent_pars
+        Xcontext_list   = [  one_hot for i in range(0, item) ]
+        # Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
+        return Xcontext_list  
 
 def train_grab5(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=None, K=10, dirout="ztmp/"):
     """
@@ -1011,14 +1027,6 @@ def train_grab5(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     log(agent_pars)    
 
 
-    def context_get(t, loc_id):
-        one_hot         = np.zeros(2) ## one hot
-        one_hot[loc_id] = 1
-        Xcontext_list   = [  one_hot for i in range(0, agent_pars['n_arms']) ]
-        # Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
-        return Xcontext_list  
-
-
     ####### Metrics
     dd = {}
     regret_sum     = 0
@@ -1044,7 +1052,7 @@ def train_grab5(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         for t in range(0, len(env_df)):
             
             # Return One action :  1 full list of item_id  to be Displayed
-            Xcontext  = context_get(t, loc_id )
+            Xcontext  = context_get(t, loc_id, agent_pars )
             action, pred_reward_list = agent.choose_next_arm(Xcontext)
 
             #### ENV reward / clk 

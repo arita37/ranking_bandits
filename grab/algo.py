@@ -123,13 +123,13 @@ class newBandit:
         gamma = self.gamma
 
         A  = np.arange(0, self.n_arms) ### all items
-        log('All item', reward_list_float)
+        # log('All item', reward_list_float)
         # concatenated_array = np.concatenate(reward_list_float.reshape(-1, 1), axis=0)
         concatenated_array = np.array(reward_list_float)
-        log('Input all reward list', concatenated_array)
+        # log('Input all reward list', concatenated_array)
         # Get the indices that would sort the concatenated array in descending order
         indices_descending = np.argsort(concatenated_array)
-        log('Input all reward list', reward_list_float)
+        # log('Input all reward list', reward_list_float)
         log('After sorting item id on the basis of best reward', indices_descending)
         # Use the indices to sort the original list of arrays
         As = [reward_list_float[i] for i in indices_descending] ### As reward
@@ -140,11 +140,9 @@ class newBandit:
         As_expoit_item_id  = indices_descending[: self.nb_positions - self.R]
         As_explore_item_id = indices_descending[self.nb_positions - self.R:]
         
-        
-
-        log(f'\nExploitation reward: {As_exploit} and item id {As_expoit_item_id}')
-        log(f'\nExpolaration : {len(As_explore)}, so the expolaration rewrds {As_explore}')
-        log('Items need to explore',As_explore_item_id, "\n")
+        # log(f'\nExploitation reward: {As_exploit} and item id {As_expoit_item_id}')
+        # log(f'\nExpolaration : {len(As_explore)}, so the expolaration rewrds {As_explore}')
+        # log('Items need to explore',As_explore_item_id, "\n")
 
         # reward_dict = {f'{i}': array for i, array in enumerate(reward_list_float)}
         new_array_list =  []
@@ -158,10 +156,6 @@ class newBandit:
                 # Find the argmax(a belongs to Aneg) r(Xs, a)
                 imax = np.argmax(Aneg)
                 # Calculate Plist based on exploration 
-                # if i != imax : 
-                #     Plist[u] = abs(np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0))  
-                # else: 
-                #     Plist[u] = abs(1 - np.sum(Aneg))
                 if u != imax:
                     Plist[u] = np.abs(1 / len(Aneg) + gamma * (As[imax] - As[u]))
                 else:
@@ -192,7 +186,7 @@ class newBandit:
         top_items = items[:self.nb_positions]
         #sanity check for Before exploration items have to same for top items values. 
         assert np.array_equal(As_expoit_item_id, top_items[ :self.nb_positions-self.R])
-        log('all items after TS model ', items)
+        # log('all items after TS model ', items)
         return items #### [ 7,5 , 8, 1, ]
 
 

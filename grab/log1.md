@@ -240,3 +240,12 @@ ztmp/exp//20231128_2220_T10/sim0/metrics/simul_metrics.csv
 ```
 
 
+
+
+#Update 
+
+After sorting item id on the basis of best reward [6 1 5 0 4 2 3]
+Actions [0 1 2 3 4 5 6] and its location is 0
+After sorting item id on the basis of best reward [5 0 6 2 4 1 3]
+Actions [5 6 4 3 2 1 0] and its location is 1
+
