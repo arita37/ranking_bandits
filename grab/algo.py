@@ -224,7 +224,7 @@ class newBandit:
             reward_list0 = dftrain['y'][i]
             context_list0 = dftrain['context-x1'][i]
             reward_list.append(reward_list0)
-            context_list.append(context_list0)
+            context_list.append(context_list0)   
         self.reward_model.update_batch(i, reward_list, context_list)
 
 
