@@ -123,11 +123,12 @@ class newBandit:
         gamma = self.gamma
 
         A  = np.arange(0, self.n_arms) ### all items
-        log('All item', A)
-        concatenated_array = np.concatenate(reward_list_float, axis=0)
-
+        log('All item', reward_list_float)
+        # concatenated_array = np.concatenate(reward_list_float.reshape(-1, 1), axis=0)
+        concatenated_array = np.array(reward_list_float)
+        log('Input all reward list', concatenated_array)
         # Get the indices that would sort the concatenated array in descending order
-        indices_descending = np.argsort(concatenated_array[:, 0])[::-1]
+        indices_descending = np.argsort(concatenated_array)
         log('Input all reward list', reward_list_float)
         log('After sorting item id on the basis of best reward', indices_descending)
         # Use the indices to sort the original list of arrays
@@ -157,10 +158,14 @@ class newBandit:
                 # Find the argmax(a belongs to Aneg) r(Xs, a)
                 imax = np.argmax(Aneg)
                 # Calculate Plist based on exploration 
-                if i != imax : 
-                    Plist[u] = abs(np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0))  
-                else: 
-                    Plist[u] = abs(1 - np.sum(Aneg))
+                # if i != imax : 
+                #     Plist[u] = abs(np.concatenate(1/ len(Aneg) + gamma * ( As[imax]  - As[u]), axis = 0))  
+                # else: 
+                #     Plist[u] = abs(1 - np.sum(Aneg))
+                if u != imax:
+                    Plist[u] = np.abs(1 / len(Aneg) + gamma * (As[imax] - As[u]))
+                else:
+                    Plist[u] = np.abs(1 - np.sum(Aneg))
                     
             # Sample from Plist to select an item for exploration
             # Normalize Plist to ensure probabilities sum to 1
@@ -173,8 +178,15 @@ class newBandit:
         # Flatten the array and get the indices that would sort it in descending order
         indices_descending = np.argsort(np.array(new_array_list).flatten())[::-1]
         #mapping the orginal reward array index to sorted reward array index which is obtained from exploration
-        map = {0:As_explore_item_id[0]}
-        indices = [map.get(i) for i in indices_descending]
+        # map = {0:As_explore_item_id[0], 1:As_explore_item_id[1], 2:As_explore_item_id[2], 3:As_explore_item_id[3], 4:As_explore_item_id[4], 5:As_explore_item_id[5], 6:As_explore_item_id[6]}
+        # indices = [map.get(i) for i in indices_descending]
+        size_of_As_explore_item_id = len(As_explore_item_id)
+
+        # Create a mapping based on the size of As_explore_item_id
+        map = {i: As_explore_item_id[i] for i in range(size_of_As_explore_item_id)}
+
+        # Ensure that the index is within the valid range
+        indices = [map.get(i, None) for i in indices_descending]
         items = np.append(As_expoit_item_id, np.array(indices))
         # Get the top k items
         top_items = items[:self.nb_positions]
@@ -206,23 +218,14 @@ class newBandit:
 
         ##### Update reward model only  #################################
         dftrain.to_csv('dftrain.csv')
-        outer_loop = int(len(dftrain)/self.n_arms)
-        for k in range(outer_loop):
-            for i in range(0, self.n_arms):
-            #### rewawrd model update
-                reward_list  = [ 0 ]  *  self.n_arms
-                context_list = [ [] ] *  self.n_arms
-                reward_list0 = dftrain['y'][i]
-                context_list0 = dftrain['context-x1'][i]
-                action_list0 = dftrain['actions'][i]
-            #### re-index into list og [0, L-1]    
-                for j,action_id in enumerate(list(action_list0)):
-                    ix = action_id 
-                    reward_list[ ix ]  = reward_list0[j]
-                    context_list[ ix ] = context_list0[j]
-
-
-                self.reward_model.update_batch(i, reward_list0, context_list0)
+        reward_list, context_list = [], [] 
+        for i in range(0, self.n_arms):
+        #### reward model update
+            reward_list0 = dftrain['y'][i]
+            context_list0 = dftrain['context-x1'][i]
+            reward_list.append(reward_list0)
+            context_list.append(context_list0)
+        self.reward_model.update_batch(i, reward_list, context_list)
 
 
 
@@ -307,14 +310,14 @@ class LinearTS:
 
 
     """
-    def __init__(self, n_arms, d, alpha=1.0):
+    def __init__(self, n_arms, d, alpha=2.0):
         self.n_arms = n_arms
         self.d = d ## context dim
         self.alpha = alpha
 
-        self.B      = [ np.eye(d) for i in range(0, self.n_arms) ]
-        self.mu_hat = [ np.zeros((d, 1)) for i in range(0, self.n_arms) ]
-        self.f      = [ np.zeros((d, 1)) for i in range(0, self.n_arms) ]
+        self.B      = [ np.eye(2) for i in range(0, self.n_arms) ]
+        self.mu_hat = [ np.zeros((d, 2)) for i in range(0, self.n_arms) ]
+        self.f      = [ np.zeros((d, 2)) for i in range(0, self.n_arms) ]
 
 
     def update_batch(self, index:int, reward_list:list, context_list:np.array):
@@ -325,18 +328,17 @@ class LinearTS:
         """
         log('Before Batch Update ')
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
-        # for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
-        #     if len(context_list)==0:
-        #         pass  
-        
-        context = context_list.reshape(-1, 1)
-        print('list ',context.shape) 
-        print('aaaa ', reward_list.shape)
-        self.B[index] += context_list @ context_list.T
-        self.f[index] += reward_list.T * context_list.T
-        self.mu_hat[index]    = np.linalg.inv(self.B[index]) @ self.f[index]
+        for i_arm, (reward, context) in enumerate( zip(reward_list, context_list)):
+            if len(context_list)==0:
+                pass  
+            
+            context = np.array(context[0]).reshape(-1, 1)
+            reward = np.array(reward).reshape(-1, 1)
+            self.B[i_arm] += context @ context.T
+            self.f[i_arm] += (reward * context.T)
+            self.mu_hat[i_arm]    =  self.f[i_arm] @ np.linalg.inv(self.B[i_arm])
 
-        log('\nAfter Batch Update: ', index)
+        log('\nAfter Batch Update: ', i_arm)
         # log(f'B : {self.B}, Mu Hat: {self.mu_hat} , F : {self.f}')
 
 
@@ -347,14 +349,11 @@ class LinearTS:
 
     def predict_rewards_float(self, contexts:list):
         sample_rewards = []
-        for i in range(self.n_arms):            
+        for i in range(self.n_arms):          
             ### contexts : List of numpy array(1, M)    , len(list) = n_arms
             context = contexts[i].reshape(1, -1)    ### dimension (1,d)
-            print('context : ', context.shape)
-            print('mu hat shape : ', self.mu_hat[i].shape)
-            print('np.linalg.inv(self.B[i]) shape : ', np.linalg.inv(self.B[i]).shape)
-            mean = (self.mu_hat[i] @ context)[0,0]
-            var  = self.alpha * np.sqrt(context @ np.linalg.inv(self.B[i] ) @ context.T )
+            mean = (self.mu_hat[i] @ context.T)[0,0]
+            var  = self.alpha * np.sqrt(context @ self.B[i] @ context.T )[0,0]
             sample_reward = np.random.normal(mean, var)
             sample_rewards.append(sample_reward)
         return sample_rewards

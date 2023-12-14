@@ -830,7 +830,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
         one_hot[loc_id] = 1
         Xcontext_list   = [  one_hot for i in range(0, agent_pars['n_arms']) ]
         # Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
-        return Xcontext_list  
+        return one_hot  
 
 
     ####### Metrics
@@ -883,7 +883,7 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
             if t % BATCH_SIZE == 0:
                 #### Rolling window, only keep most recent.
                 dftrain = dftrain.iloc[:BATCH_SIZE,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
-                # agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
+                agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
 
 
             ####### Metrics ###################################################  
@@ -915,6 +915,193 @@ def train_grab4(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=Non
     pd_to_file(df_result, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
 
     dfs = df_result.groupby('action_list').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
+    pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
+
+    log("###### Agent Save ###########") 
+    diroutk = f"{dirout}/agent"
+    os_makedirs(diroutk)
+    agent.save(diroutk)
+    log(diroutk)
+
+    return agent
+
+#######  Run with 2 locations  ###########################################################
+def run5(cfg:str="config.yaml", name='simul3', dirout='ztmp/exp/', T=1000, nsimul=1, K=2):    
+    """ Run Simulation 
+
+         python simulation.py  run5  --cfg config.yaml --name 'simulnew'    --T 10    --dirout ztmp/exp/ --K 2
+
+         python simulation.py  run5  --cfg config.yaml --name 'simulnew'    --T 10000    --dirout ztmp/exp/ --K 2
+
+
+    """
+    dt = date_now(fmt="%Y%m%d_%H%M")
+    dirout2 = dirout + f"/{dt}_T{T}"
+    # cfg0    = config_load(cfg)
+
+    for i in range(nsimul):
+        dirouti = f"{dirout2}/sim{i}"
+        df, dfstat      = generate_click_data2(cfg= cfg, name=name, T=T, 
+                                       dirout= dirouti + f"/data/df_simul_{i}.csv")
+        train_grab5(cfg, name, df, dfstat, K=K, dirout=dirouti)
+
+
+def train_grab5(cfg,name='simul3', df:pd.DataFrame=None, dfstat:pd.DataFrame=None, K=10, dirout="ztmp/"):
+    """
+    Simulate and test a GRAB-based recommendation system using a provided dataset. 
+    Compute the regret at each iteration
+
+    Args:
+    - cfg (str): config
+
+
+       itemid_list : Displayed item at time step ts
+       itemid_clk :  1 (click) or 0 for items in Displayed items
+ 
+
+    ##### In location 0 : 
+    # For location 0 :    Top-3 best item_id are. [ 6, 5,4 ] with click proba  [ 0.95, 0.9, 0.8 ]
+    # For location 1 :    Top-3 best item_id are. [ 0, 1, 3 ] with click proba [ 0.95, 0.9, 0.8 ]
+    ####   Goal of reward learning : to predict correct level of reward based on location
+    ####   reward_list_pred = model_regression.predict(X= [ loc_id,  real_reward_click ],  )
+
+
+    We will another model called: Thompsom Sampling.
+
+    
+
+
+    """ 
+    BATCH_SIZE = 8  
+    cfg0 = config_load(cfg) if isinstance(cfg, str) else cfg
+    cfg1 = cfg0[name]
+    cc = Box({})
+    
+    log("### ENV Setup #######################")
+    cc.n_item_all = len(df['item_id'].unique())
+    cc.loc_id_all = len(df['loc_id'].unique())
+    cc.nrows      = len(df)
+    log(dfstat)
+
+
+    log("### Agent Setup #####################")
+    agent_uri   = cfg1['agent'].get('agent_uri', "algo:newBandit" )
+    agent_pars  = cfg1['agent'].get('agent_pars', {} )
+    # agents=[]
+    T            = 10 
+    dvector      = 5 ### size of embedding vector
+ 
+
+    ### Metrics
+    dd = {}
+    regret_sum     = 0
+    regret_bad_cum = 0
+    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histoy
+    # bandit = newBandit(n_arms=n_arms, nb_positions=nb_positions, gamma=gamma, T=T)
+    # contexts =[  np.random.rand(1, nb_positions) for i in range(0, n_arms) ]
+
+    log("\n#### Init Agent for all loc_id ")
+    agent_pars['T']      = T      ## Correct T 
+    agent_pars['n_arms'] = cc.n_item_all ## Correct                
+    agentClass = load_function_uri(agent_uri)
+    print(agent_pars)
+    agent      = agentClass(**agent_pars)
+    cc.agent_pars = agent_pars        
+    log(agent_pars)    
+
+
+    def context_get(t, loc_id):
+        one_hot         = np.zeros(2) ## one hot
+        one_hot[loc_id] = 1
+        Xcontext_list   = [  one_hot for i in range(0, agent_pars['n_arms']) ]
+        # Xcontext_list  = [  np.random.rand(1, dvector ) for i in range(0, agent_pars['n_arms']) ]
+        return Xcontext_list  
+
+
+    ####### Metrics
+    dd = {}
+    regret_sum     = 0
+    regret_bad_cum = 0
+    nstep_train    = 200
+    dftrain, df_collect = pd.DataFrame(), pd.DataFrame() #### contains all histo
+
+
+    log("\n##### Start Simul  ")
+    #### for each location: a New bandit optimizer
+    for loc_id in range(cc.loc_id_all):
+
+        ### Env: Flatten simulation data per time step ################################
+        dfi         = df[df['loc_id'] == loc_id ]
+        env_df         = dfi.groupby(['ts']).apply( lambda dfi :  dfi['item_id'].values  ).reset_index()
+        env_df.columns = ['ts', 'itemid_list' ]
+        env_df['itemid_clk'] = dfi.groupby(['ts']).apply( lambda dfi :   dfi['is_clk'].values  )    ##. 0,0,01
+        log('\n#### Simul data \n', env_df[[ 'ts', 'itemid_list', 'itemid_clk'   ]])
+        
+        #### Run simulation  #####################################
+        n_item      = cc.n_item_all
+        Xcontext_list, reward_list, action_list = [], [], []
+        for t in range(0, len(env_df)):
+            
+            # Return One action :  1 full list of item_id  to be Displayed
+            Xcontext  = context_get(t, loc_id )
+            action, pred_reward_list = agent.choose_next_arm(Xcontext)
+
+            #### ENV reward / clk 
+            itemid_imp = env_df['itemid_list'].values[t]
+            itemid_clk = env_df['itemid_clk' ].values[t]
+
+            rwd_best             = np.sum( itemid_clk )   ### All Clicks               
+            rwd_actual, rwd_list = rwd_sum_intersection( action, itemid_imp, itemid_clk,)
+            regret               = rwd_best - rwd_actual   #### Max Value  K items
+            regret_bad_cum      += len(itemid_imp)  # Update regret_bad_cum
+            regret_sum          += regret    #update regret sum 
+            regret_ratio         = regret_sum / regret_bad_cum  #regret ratio calculation
+            ####### Metrics ###################################################  
+            dd = metrics_add(dd, 'context', Xcontext)
+            dd = metrics_add(dd, 'action',   action)
+            dd = metrics_add(dd, 'rwd_best',      rwd_best    )
+            dd = metrics_add(dd, 'rwd_actual',    rwd_actual    )
+            dd = metrics_add(dd, 'rwd_list',      rwd_list   )
+            dd = metrics_add(dd, 'predicted_reward', pred_reward_list)
+            dd = metrics_add(dd, 'regret',           regret    )
+            dd = metrics_add(dd, 'regret_bad_cum',   regret_sum )   #### Worst case  == Linear
+            dd = metrics_add(dd, 'regret_ratio',     regret_ratio    ) 
+
+            Xcontext_list.append(Xcontext)
+            reward_list.append(rwd_list)
+            action_list.append(action)
+            #######################################################################
+            ### Build historical train : at each time step t, 1 full List : reward, action and context
+            dfi = pd.DataFrame()
+            dfi['y']          = reward_list       ### list size is L-items (ie all the items)
+            dfi['context-x1'] = Xcontext_list  ### list of Array(1, dvector)
+            dfi['actions']    = action_list    ### list of itemid 
+            dftrain = pd.concat(( dfi, dftrain))  
+            #### Using Reward Learning from dynamic Context ###################
+            if t > 0 and t % BATCH_SIZE == 0:
+                #### Rolling window, only keep most recent.
+                dftrain = dftrain.iloc[:BATCH_SIZE,:] ### only keep ntime_step , nitem_step = 7, n_step_train =200
+                print('   AGENT IS UPDATING         ')
+                agent.update(mode='train_reward', dftrain = dftrain) ### Update Reward Model + Grab Model
+  
+        # collecting data on the basis of context
+        df_collect = pd.concat((df_collect, env_df)).reset_index(drop = True)  #concat dataframe
+        try:
+            df_collect = df_collect.drop('level_0', axis=1, errors='ignore') #drop if it exist column level_0
+        except:
+            pass
+     ### Exp Params 
+    log(cc)
+    json_save(cc, f"{dirout}/params.json")    
+
+    # log("###### Metrics Save ###########") 
+    df_result = metrics_create(df_collect, dd)
+    
+    log(df_result[[ 'rwd_best' ,  'rwd_actual', 'regret_cum', 'regret_bad_cum', 'regret_ratio']])
+    diroutr = f"{dirout}/metrics"
+    pd_to_file(df_result, diroutr + "/simul_metrics.csv", index=False, show=1, sep="\t" )
+
+    dfs = df_result.groupby('action').agg({'ts': 'count'}).reset_index().sort_values('ts', ascending=0) 
     pd_to_file(dfs, diroutr + "/simul_metrics_stats.csv", index=False, show=1, sep="\t" )
 
     log("###### Agent Save ###########") 
